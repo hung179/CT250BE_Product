@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   IsString,
   IsNumber,
@@ -5,39 +6,55 @@ import {
   IsOptional,
   ValidateNested,
   IsNotEmpty,
-  IsDefined,
   IsMongoId,
+  IsBoolean,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { PartialType } from '@nestjs/mapped-types';
 
 class TTChiTietSPDto {
   @IsMongoId()
   thuocTinh_CTSP!: string;
 
-  @IsDefined()
-  giaTri_CTSP!: unknown;
+  @IsString()
+  giaTri_CTSP!: string;
 }
 
 class TuyChonPLDto {
   @IsString()
-  tenTuyChon_TC!: string;
+  ten_TC!: string;
 
-  @IsNumber()
-  giaBan_TC!: number;
-
-  @IsNumber()
-  khoHang_TC!: number;
+  @IsBoolean()
+  anh_TC?: boolean;
 }
 
 class PhanLoaiSPDto {
   @IsString()
-  tenPhanLoai_PL!: string;
+  ten_PL!: string;
 
   @IsArray()
+  @Transform(({ value }) => JSON.parse(value))
   @ValidateNested({ each: true })
   @Type(() => TuyChonPLDto)
   tuyChon_PL!: TuyChonPLDto[];
+}
+
+class TTBanHangSPDto {
+  @IsOptional()
+  @IsString()
+  tuyChonPhanLoai1_BH?: string;
+
+  @IsOptional()
+  @IsString()
+  tuyChonPhanLoai2_BH?: string;
+
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  giaBan_TC?: number;
+
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  khoHang_TC?: number;
 }
 
 export class CreateProductDto {
@@ -53,19 +70,30 @@ export class CreateProductDto {
   @IsNotEmpty()
   moTa_SP!: string;
 
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   trongLuongSP!: number;
 
   @IsArray()
+  @Transform(({ value }) => JSON.parse(value))
   @ValidateNested({ each: true })
   @Type(() => TTChiTietSPDto)
   ttChiTiet_SP!: TTChiTietSPDto[];
 
   @IsOptional()
   @IsArray()
+  @Transform(({ value }) => JSON.parse(value))
+  @ValidateNested({ each: true })
+  @Type(() => TTBanHangSPDto)
+  ttBanHang_SP?: TTBanHangSPDto[];
+
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }) => JSON.parse(value))
   @ValidateNested({ each: true })
   @Type(() => PhanLoaiSPDto)
   phanLoai_SP?: PhanLoaiSPDto[];
 }
 
+// Cập nhật DTO để chuyển dữ liệu từ form-data thành định dạng đúng
 export class UpdateProductDto extends PartialType(CreateProductDto) {}
