@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
+import { ProductModule } from './product/product.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -18,6 +19,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         return { uri };
       },
     }),
+    ProductModule,
+    CloudinaryModule,
   ],
   controllers: [],
   providers: [],

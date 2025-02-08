@@ -33,6 +33,8 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-call': 'off',
       'linebreak-style': ['error', 'windows'],
       '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/prefer-promise-reject-errors': 'off',
     },
   }
 );
