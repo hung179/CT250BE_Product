@@ -10,20 +10,20 @@ export type ProductDocument = SAN_PHAM & Document;
   },
 })
 export class SAN_PHAM {
-  @Prop({ required: true, unique: true })
+  @Prop({ type: String, required: true, unique: true })
   ma_SP!: string;
 
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   ten_SP!: string;
 
   @Prop({ type: String, required: true })
   nganhHang_SP!: string;
 
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   moTa_SP!: string;
 
   @Prop({ type: [{ public_id: String, url: String }] })
-  anh_SP!: { public_id: string; url: string }[];
+  anh_SP?: { public_id: string; url: string }[];
 
   @Prop({ default: false })
   daXoa_SP?: boolean;
@@ -31,46 +31,62 @@ export class SAN_PHAM {
   @Prop({ default: false })
   daAn_SP?: boolean;
 
-  @Prop({ required: true })
+  @Prop({ type: Number, required: true })
   trongLuongSP!: number;
 
   @Prop({
     type: [
       {
         thuocTinh_CTSP: { type: String, required: true },
-        giaTri_CTSP: { required: true },
+        giaTri_CTSP: { type: String, required: true },
       },
     ],
+    required: true,
   })
   ttChiTiet_SP!: {
     thuocTinh_CTSP: string;
-    giaTri_CTSP: unknown;
+    giaTri_CTSP: string;
   }[];
 
   @Prop({
     type: [
       {
-        tenPhanLoai_PL: String, // Tên phân loại
+        tuyChonPhanLoai1_BH: { type: String },
+        tuyChonPhanLoai2_BH: { type: String },
+        giaBan_TC: { type: Number, required: true },
+        khoHang_TC: { type: Number, required: true },
+      },
+    ],
+  })
+  ttBanHang_SP?: {
+    tuyChonPhanLoai1_BH: string;
+    tuyChonPhanLoai2_BH: string;
+    giaBan_TC: number;
+    khoHang_TC: number;
+  }[];
+
+  @Prop({
+    type: [
+      {
+        ten_PL: String,
         tuyChon_PL: [
           {
-            tenTuyChon_TC: { type: String, required: true },
-            giaBan_TC: { type: Number, required: true },
-            khoHang_TC: { type: Number, required: true },
-            anh_TC: [{ public_id: String, url: String }], // Hình ảnh tùy chọn
+            ten_TC: { type: String, required: true },
+            coAnh_TC: { type: Boolean, default: false },
+            anh_TC: { type: [{ public_id: String, url: String }] },
           },
         ],
       },
     ],
   })
   phanLoai_SP?: {
-    tenPhanLoai_PL: string;
+    ten_PL: string;
     tuyChon_PL: {
-      tenTuyChon_TC: string;
-      giaBan_TC: number;
-      khoHang_TC: number;
-      anh_TC: { public_id: string; url: string }[];
+      ten_TC: string;
+      coAnh_TC: boolean;
+      anh_TC: { public_id: string; url: string };
     }[];
-  }[]; // Phân loại sản phẩm với tùy chọn
+  }[];
 }
 
 export const SAN_PHAMSchema = SchemaFactory.createForClass(SAN_PHAM);
