@@ -5,6 +5,7 @@ import { ProductController } from './product.controller';
 import { SAN_PHAM, SAN_PHAMSchema } from './schema/product.schema';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { DeletedProductCodeModule } from './deletedProductCode/deleteProductCode.module';
+import { ReviewModule } from '../review/review.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { DeletedProductCodeModule } from './deletedProductCode/deleteProductCode
       { name: SAN_PHAM.name, schema: SAN_PHAMSchema },
     ]),
     DeletedProductCodeModule,
+    ReviewModule,
   ],
   controllers: [ProductController],
   providers: [ProductService, CloudinaryService],

@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ReviewService } from './review.service';
 import { ReviewController } from './review.controller';
-import { Danh_Gia, Danh_GiaSchema } from './review.schema';
+import { DANH_GIA, DANH_GIASchema } from './review.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: Danh_Gia.name, schema: Danh_GiaSchema },
+      { name: DANH_GIA.name, schema: DANH_GIASchema },
     ]),
   ],
   controllers: [ReviewController],

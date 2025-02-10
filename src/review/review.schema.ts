@@ -7,7 +7,7 @@ import { Document } from 'mongoose';
     updatedAt: 'ngayCapNhat_DG',
   },
 })
-export class Danh_Gia extends Document {
+export class DANH_GIA extends Document {
   @Prop({ required: true })
   idSanPham_DG!: string;
 
@@ -21,4 +21,4 @@ export class Danh_Gia extends Document {
   diem_DG!: number;
 }
 
-export const Danh_GiaSchema = SchemaFactory.createForClass(Danh_Gia);
+export const DANH_GIASchema = SchemaFactory.createForClass(DANH_GIA);

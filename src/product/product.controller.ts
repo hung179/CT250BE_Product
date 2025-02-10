@@ -30,7 +30,7 @@ export class ProductController {
     @Body() createProductDto: CreateProductDto,
     @UploadedFiles()
     files: {
-      anhBia_SP?: Express.Multer.File[]; // 🟢 Sử dụng array vì Multer lưu file trong mảng
+      anhBia_SP?: Express.Multer.File[];
       anh_SP?: Express.Multer.File[];
       anh_TC?: Express.Multer.File[];
     }
@@ -111,10 +111,11 @@ export class ProductController {
     @Param('id') id: string,
     @Query('searchKey') searchKey: string,
     @Query('code') code: number,
-    @Query('l') limit: number = 12
+    @Query('l') limit: number = 12,
+    @Query('p') page: number = 0
   ) {
     if (id) {
-      return this.productService.getProductById(id);
+      return this.productService.getProductById(id, page, limit);
     } else if (searchKey) {
       return this.productService.getProductBySearchKey(searchKey, limit);
     } else if (code) {

@@ -6,16 +6,18 @@ import { SAN_PHAM, ProductDocument } from './schema/product.schema';
 import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service'; // Nhập CloudinaryService để xử lý ảnh
 import { DeletedProductCodeService } from './deletedProductCode/deletedProductCode.service';
+import { ReviewService } from '../review/review.service';
 
 @Injectable()
 export class ProductService {
   constructor(
     @InjectModel(SAN_PHAM.name) private productModel: Model<ProductDocument>,
     private cloudinaryService: CloudinaryService, // Tiêm CloudinaryService
-    private readonly deletedCodeService: DeletedProductCodeService
+    private readonly deletedCodeService: DeletedProductCodeService,
+    private readonly reviewService: ReviewService
   ) {}
 
-  // Tạo mới sản phẩm
+  ////////////////////// Tạo mới sản phẩm
   async createProduct(
     dto: CreateProductDto,
     anh_SP: Express.Multer.File[],
@@ -71,137 +73,7 @@ export class ProductService {
     return await product.save();
   }
 
-  /////////////////////////////////////////////////////////////////////////////////Cập nhật sản phẩm
-  // async updateProduct(
-  //   id: string,
-  //   updateProductDto: UpdateProductDto,
-  //   files: {
-  //     anhBiaCapNhat_SP: Express.Multer.File | undefined;
-  //     anhMoi_SP: Express.Multer.File[] | undefined;
-  //     anhMoi_TC: Express.Multer.File[] | undefined;
-  //     anhCapNhat_SP: Express.Multer.File[] | undefined;
-  //     anhCapNhat_TC: Express.Multer.File[] | undefined;
-  //   }
-  // ): Promise<SAN_PHAM> {
-  //   // 1️⃣ Tìm sản phẩm cần cập nhật
-  //   const product = await this.productModel.findById(id);
-  //   if (!product) {
-  //     throw new NotFoundException('Sản phẩm không tồn tại');
-  //   }
-  //   await this.productModel.updateOne({ _id: id }, { $set: updateProductDto });
-  //   // 2️⃣ Cập nhật ảnh bìa
-  //   if (files.anhBiaCapNhat_SP) {
-  //     const productImageCover =
-  //       await this.cloudinaryService.uploadProductImageCover(
-  //         id,
-  //         files.anhBiaCapNhat_SP
-  //       );
-  //     console.log('Anh Bia');
-  //     console.log(productImageCover);
-  //     product.anhBia_SP = productImageCover.anh_SP_uploaded;
-  //   }
-
-  //   // 3️⃣ Thêm ảnh sản phẩm
-  //   if (files.anhMoi_SP) {
-  //     const productImages = await this.cloudinaryService.uploadProductImages(
-  //       id,
-  //       files.anhMoi_SP
-  //     );
-  //     console.log('Anh SP thêm mới');
-  //     console.log(productImages);
-  //     product.anh_SP = [
-  //       ...(product.anh_SP || []),
-  //       ...productImages.anh_SP_uploaded,
-  //     ];
-  //   }
-
-  //   // 4️⃣ Cập nhật ảnh sản phẩm
-  //   if (updateProductDto.ttAnhCapNhat_SP) {
-  //     if (
-  //       files.anhCapNhat_SP &&
-  //       files.anhCapNhat_SP.length === updateProductDto.ttAnhCapNhat_SP.length
-  //     ) {
-  //       const productImages = await this.cloudinaryService.updateImages(
-  //         updateProductDto.ttAnhCapNhat_SP,
-  //         files.anhCapNhat_SP
-  //       );
-
-  //       console.log('Anh SP cập nhật');
-  //       console.log(productImages);
-  //       // Cập nhật URL trong anh_SP nếu public_id trùng khớp
-  //       product.anh_SP = (product.anh_SP ?? []).map((image) => {
-  //         const updatedImage = productImages.find(
-  //           (img) => img.public_id === image.public_id
-  //         );
-  //         return updatedImage ? { ...image, url: updatedImage.url } : image;
-  //       });
-  //     }
-  //   }
-
-  //   // 5️⃣ Thêm ảnh tùy chọn
-  //   if (files.anhMoi_TC) {
-  //     const idTuyChonCoAnh: string[] =
-  //       product.phanLoai_SP
-  //         ?.flatMap((pl) =>
-  //           pl.tuyChon_PL
-  //             .filter((tc) => tc.coAnh_TC === true && !tc.anh_TC)
-  //             .map((tc) => (tc as any)._id?.toString())
-  //         )
-  //         ?.filter((id): id is string => !!id) || []; // Loại bỏ `undefined`
-
-  //     console.log(idTuyChonCoAnh);
-  //     const productOptionImages =
-  //       await this.cloudinaryService.uploadProductOptionImages(
-  //         id,
-  //         files.anhMoi_TC,
-  //         idTuyChonCoAnh
-  //       );
-  //     console.log('Anh TC them');
-  //     console.log(productOptionImages);
-  //     let index = 0;
-  //     product.phanLoai_SP?.[0]?.tuyChon_PL.forEach((tuyChon) => {
-  //       if (tuyChon.coAnh_TC === true && !tuyChon.anh_TC) {
-  //         tuyChon.anh_TC = productOptionImages.anh_TC_uploaded[index];
-  //         index++;
-  //       }
-  //     });
-  //   }
-
-  //   // 6️⃣ Cập nhật ảnh tùy chọn
-  //   if (updateProductDto.ttAnhCapNhat_TC) {
-  //     if (
-  //       files.anhCapNhat_TC &&
-  //       files.anhCapNhat_TC.length === updateProductDto.ttAnhCapNhat_TC.length
-  //     ) {
-  //       const productOptionImages = await this.cloudinaryService.updateImages(
-  //         updateProductDto.ttAnhCapNhat_TC,
-  //         files.anhCapNhat_TC
-  //       );
-  //       console.log('Anh TC cap nhat');
-  //       console.log(productOptionImages);
-  //       product.phanLoai_SP?.[0]?.tuyChon_PL.forEach((tuyChon) => {
-  //         if (tuyChon.coAnh_TC === true && tuyChon.anh_TC) {
-  //           const updatedImage = productOptionImages.find(
-  //             (img) => img.public_id === tuyChon.anh_TC?.public_id
-  //           );
-  //           if (updatedImage) {
-  //             tuyChon.anh_TC = updatedImage;
-  //           }
-  //         }
-  //       });
-  //     }
-  //   }
-
-  //   // 7️⃣ Cập nhật xóa ảnh sản phẩm
-  //   if (updateProductDto.ttAnhXoa_SP) {
-  //     await this.cloudinaryService.deleteImages(updateProductDto.ttAnhXoa_SP);
-  //   }
-
-  //   await product.save();
-  //   return (await this.productModel.findById(id)) as SAN_PHAM;
-  // }
-
-  //Cập nhật sản phẩm
+  //////////////////Cập nhật sản phẩm
   async updateProduct(
     id: string,
     updateProductDto: UpdateProductDto,
@@ -406,7 +278,7 @@ export class ProductService {
     );
   }
 
-  // Xóa sản phẩm
+  /////////////////////// Xóa sản phẩm
   async deleteProduct(id: string): Promise<void> {
     const product = await this.productModel.findById(id);
     if (!product) {
@@ -428,7 +300,7 @@ export class ProductService {
     }
   }
 
-  // Lấy nhiều sản phẩm
+  /////////////// Lấy nhiều sản phẩm
   async getProducts(page: number = 0, limit) {
     // Tính toán số sản phẩm cần bỏ qua
     const skip = page * limit;
@@ -457,13 +329,18 @@ export class ProductService {
     };
   }
 
-  // Lấy sản phẩm theo ID
-  async getProductById(id: string): Promise<SAN_PHAM> {
+  ////////////////////// Lấy sản phẩm theo ID
+  async getProductById(id: string, page: number, limit: number) {
     const product = await this.productModel.findById(id);
     if (!product) {
       throw new NotFoundException(`Không tìm thấy sản phẩm với ID: ${id}`);
     }
-    return product;
+    const reviews = await this.reviewService.getReviewsByProduct(
+      id,
+      page,
+      limit
+    );
+    return { product, reviews };
   }
 
   // Lấy sản phẩm theo mã sản phẩm
