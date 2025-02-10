@@ -10,10 +10,10 @@ export type ProductDocument = SAN_PHAM & Document;
   },
 })
 export class SAN_PHAM {
-  @Prop({ type: String, required: true, unique: true })
-  ma_SP!: string;
+  @Prop({ type: Number, required: true, unique: true })
+  ma_SP!: number;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, index: 'text' })
   ten_SP!: string;
 
   @Prop({ type: String, required: true })
@@ -24,6 +24,9 @@ export class SAN_PHAM {
 
   @Prop({ type: [{ public_id: String, url: String }] })
   anh_SP?: { public_id: string; url: string }[];
+
+  @Prop({ type: { public_id: String, url: String } })
+  anhBia_SP?: { public_id: string; url: string };
 
   @Prop({ default: false })
   daXoa_SP?: boolean;
@@ -73,7 +76,7 @@ export class SAN_PHAM {
           {
             ten_TC: { type: String, required: true },
             coAnh_TC: { type: Boolean, default: false },
-            anh_TC: { type: [{ public_id: String, url: String }] },
+            anh_TC: { type: { public_id: String, url: String } },
           },
         ],
       },

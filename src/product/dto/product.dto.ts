@@ -33,7 +33,9 @@ class PhanLoaiSPDto {
   ten_PL!: string;
 
   @IsArray()
-  @Transform(({ value }) => JSON.parse(value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value
+  )
   @ValidateNested({ each: true })
   @Type(() => TuyChonPLDto)
   tuyChon_PL!: TuyChonPLDto[];
@@ -75,25 +77,63 @@ export class CreateProductDto {
   trongLuongSP!: number;
 
   @IsArray()
-  @Transform(({ value }) => JSON.parse(value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value
+  )
   @ValidateNested({ each: true })
   @Type(() => TTChiTietSPDto)
   ttChiTiet_SP!: TTChiTietSPDto[];
 
   @IsOptional()
   @IsArray()
-  @Transform(({ value }) => JSON.parse(value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value
+  )
   @ValidateNested({ each: true })
   @Type(() => TTBanHangSPDto)
   ttBanHang_SP?: TTBanHangSPDto[];
 
   @IsOptional()
   @IsArray()
-  @Transform(({ value }) => JSON.parse(value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value
+  )
   @ValidateNested({ each: true })
   @Type(() => PhanLoaiSPDto)
   phanLoai_SP?: PhanLoaiSPDto[];
 }
 
 // Cập nhật DTO để chuyển dữ liệu từ form-data thành định dạng đúng
-export class UpdateProductDto extends PartialType(CreateProductDto) {}
+export class UpdateProductDto extends PartialType(CreateProductDto) {
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value
+  )
+  ttAnhCapNhat_SP?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value
+  )
+  ttAnhCapNhat_TC?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value
+  )
+  ttAnhXoa_SP?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value
+  )
+  ttAnhXoa_TC?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  daAn_SP?: boolean;
+}

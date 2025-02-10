@@ -9,23 +9,39 @@ import * as toStream from 'buffer-to-stream';
 
 @Injectable()
 export class CloudinaryService {
-  async uploadImages(
-    product: any,
-    anh_SP: Express.Multer.File[],
-    anh_TC: Express.Multer.File[]
-  ): Promise<{
-    anh_SP_uploaded: { public_id: string; url: string }[];
-    anh_TC_uploaded: { public_id: string; url: string }[];
-  }> {
-    const productId = product._id.toString();
+  // Tải ảnh bìa sản phẩm
+  async uploadProductImageCover(
+    productId: string,
+    anh_SP: Express.Multer.File
+  ): Promise<{ anh_SP_uploaded: { public_id: string; url: string } }> {
+    return new Promise<{ public_id: string; url: string }>(
+      (resolve, reject) => {
+        const publicId = `${productId}`;
 
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: `Product/${productId}`, public_id: publicId },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve({ public_id: result!.public_id, url: result!.url });
+          }
+        );
+
+        toStream(anh_SP.buffer).pipe(uploadStream);
+      }
+    ).then((anh_SP_uploaded) => ({ anh_SP_uploaded }));
+  }
+
+  // Tải ảnh sản phẩm
+  async uploadProductImages(
+    productId: string,
+    anh_SP: Express.Multer.File[]
+  ): Promise<{ anh_SP_uploaded: { public_id: string; url: string }[] }> {
     const uploadPromises_SP = anh_SP.map(
-      (file, index) =>
+      (file) =>
         new Promise<UploadApiResponse | UploadApiErrorResponse>(
           (resolve, reject) => {
-            const publicId = `${productId}_${(index + 1).toString()}`;
             const uploadStream = cloudinary.uploader.upload_stream(
-              { folder: `Product/${productId}`, public_id: publicId },
+              { folder: `Product/${productId}` }, // Không đặt public_id để Cloudinary tự tạo
               (error, result) => {
                 if (error) return reject(error);
                 resolve(result!);
@@ -36,26 +52,28 @@ export class CloudinaryService {
         )
     );
 
-    const tuyChonAnh = product.phanLoai_SP
-      ?.filter((pl, index) => index === 0) // Chỉ lấy phân loại cấp 1 (phần tử đầu tiên)
-      .flatMap((pl) => pl.tuyChon_PL) // Gộp tất cả tùy chọn thành một mảng
-      .filter((tc) => tc.coAnh_TC === true); // Chỉ giữ tùy chọn có ảnh
+    // Chờ tất cả ảnh tải lên và lọc ảnh thành công
+    const Images_SP = await Promise.all(uploadPromises_SP);
 
+    const anh_SP_uploaded = Images_SP.filter(
+      (img): img is UploadApiResponse => 'public_id' in img && 'url' in img
+    ).map((img) => ({ public_id: img.public_id, url: img.url }));
+
+    return { anh_SP_uploaded };
+  }
+
+  // Tải ảnh tùy chọn sản phẩm
+  async uploadProductOptionImages(
+    productId: string,
+    anh_TC: Express.Multer.File[],
+    idTuyChon: string[]
+  ): Promise<{ anh_TC_uploaded: { public_id: string; url: string }[] }> {
     const uploadPromises_TC = anh_TC.map(
       (file, index) =>
         new Promise<UploadApiResponse | UploadApiErrorResponse>(
           (resolve, reject) => {
-            // Lấy tên tùy chọn tương ứng với ảnh
-            const tenTuyChon = tuyChonAnh[index].ten_TC
-              .normalize('NFD') // Tách dấu khỏi ký tự
-              .replace(/[\u0300-\u036f]/g, '') // Xóa dấu
-              .replace(/\s+/g, '-') // Xóa khoảng trắng Thay khoảng trắng bằng "_"
-              .replace(/đ/g, 'd') // Chuyển "đ" thành "d"
-              .replace(/Đ/g, 'D') // Chuyển "Đ" thành "D"
-              .toLowerCase(); // Chuyển về chữ thường
-
             // Tạo `publicId`
-            const publicId = `${productId}_${tenTuyChon}`;
+            const publicId = `${idTuyChon[index]}`;
 
             const uploadStream = cloudinary.uploader.upload_stream(
               { folder: `Product/${productId}`, public_id: publicId },
@@ -70,19 +88,14 @@ export class CloudinaryService {
         )
     );
 
-    const Images_SP = await Promise.all(uploadPromises_SP);
+    // Chờ tất cả ảnh tải lên và lọc ảnh thành công
     const Images_TC = await Promise.all(uploadPromises_TC);
-
-    // Chỉ lấy ảnh tải lên thành công
-    const anh_SP_uploaded = Images_SP.filter(
-      (img): img is UploadApiResponse => 'public_id' in img && 'url' in img
-    ).map((img) => ({ public_id: img.public_id, url: img.url }));
 
     const anh_TC_uploaded = Images_TC.filter(
       (img): img is UploadApiResponse => 'public_id' in img && 'url' in img
     ).map((img) => ({ public_id: img.public_id, url: img.url }));
 
-    return { anh_SP_uploaded, anh_TC_uploaded };
+    return { anh_TC_uploaded };
   }
 
   async deleteFolder(folderPath: string): Promise<void> {
@@ -104,5 +117,65 @@ export class CloudinaryService {
     } catch (error) {
       console.error(`Lỗi xóa thư mục ${folderPath}:`, error);
     }
+  }
+
+  async deleteImages(imagesPublicId: string[]): Promise<void> {
+    if (!imagesPublicId || imagesPublicId.length === 0) return;
+
+    try {
+      await cloudinary.api.delete_resources(imagesPublicId);
+    } catch (error) {
+      console.error('Lỗi khi xóa ảnh trên Cloudinary:', error);
+      throw new Error('Không thể xóa ảnh trên Cloudinary');
+    }
+  }
+
+  async updateImage(
+    publicId: string,
+    newImage: Express.Multer.File
+  ): Promise<{ public_id: string; url: string }> {
+    return new Promise<{ public_id: string; url: string }>(
+      (resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { public_id: publicId, overwrite: true },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve({ public_id: result!.public_id, url: result!.url });
+          }
+        );
+
+        toStream(newImage.buffer).pipe(uploadStream);
+      }
+    ).then((result) => result);
+  }
+
+  async updateImages(
+    publicIds: string[],
+    newImages: Express.Multer.File[]
+  ): Promise<{ public_id: string; url: string }[]> {
+    if (publicIds.length !== newImages.length) {
+      throw new Error('Số lượng publicId và số lượng ảnh không khớp!');
+    }
+
+    const uploadPromises = publicIds.map((publicId, index) => {
+      return new Promise<{ public_id: string; url: string }>(
+        (resolve, reject) => {
+          console.log('publicId', publicId);
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { public_id: publicId, overwrite: true }, // Giữ nguyên publicId cũ
+            (error, result) => {
+              if (error) return reject(error);
+              resolve({
+                public_id: result!.public_id,
+                url: result!.secure_url,
+              });
+            }
+          );
+          toStream(newImages[index].buffer).pipe(uploadStream);
+        }
+      );
+    });
+
+    return await Promise.all(uploadPromises);
   }
 }
