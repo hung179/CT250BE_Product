@@ -15,8 +15,6 @@ import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 import { SAN_PHAM } from './schema/product.schema';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
-const limit = 2; // Số lượng sản phẩm trên mỗi trang
-
 @Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
@@ -86,7 +84,8 @@ export class ProductController {
   @Get('search')
   async searchProducts(
     @Query('k') searchKey: string,
-    @Query('c') productId: number
+    @Query('c') productId: number,
+    @Query('l') limit: number = 12
   ) {
     if (searchKey) {
       return this.productService.getProductBySearchKey(searchKey, limit);
@@ -98,7 +97,8 @@ export class ProductController {
   @Get('all')
   async getProducts(
     @Query('p') page: number = 0,
-    @Query('c') categoryId: string = ''
+    @Query('c') categoryId: string = '',
+    @Query('l') limit: number = 12
   ) {
     if (categoryId) {
       return this.productService.getProductsByCategory(page, categoryId, limit);
@@ -107,10 +107,11 @@ export class ProductController {
   }
 
   @Get(':id')
-  async getProductById(
+  async getProduct(
     @Param('id') id: string,
     @Query('searchKey') searchKey: string,
-    @Query('code') code: number
+    @Query('code') code: number,
+    @Query('l') limit: number = 12
   ) {
     if (id) {
       return this.productService.getProductById(id);
