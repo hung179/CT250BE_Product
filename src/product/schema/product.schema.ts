@@ -10,16 +10,22 @@ export type ProductDocument = SAN_PHAM & Document;
   },
 })
 export class SAN_PHAM {
-  @Prop({ type: Number, required: true, unique: true })
+  @Prop({ type: Number, required: true, unique: true, min: 1, max: 9999999 })
   ma_SP!: number;
 
-  @Prop({ type: String, required: true, index: 'text' })
+  @Prop({ type: String, required: true, index: 'text', maxlength: 120 })
   ten_SP!: string;
 
   @Prop({ type: String, required: true })
   nganhHang_SP!: string;
 
   @Prop({ type: String, required: true })
+  kichThuoc_SP!: string;
+
+  @Prop({ type: Number, min: 1, max: 999999 })
+  trongLuong_SP!: number;
+
+  @Prop({ type: String, required: true, minlength: 100, maxlength: 3000 })
   moTa_SP!: string;
 
   @Prop({ type: [{ public_id: String, url: String }] })
@@ -72,6 +78,7 @@ export class SAN_PHAM {
     type: [
       {
         ten_PL: String,
+        cap_PL: Number,
         tuyChon_PL: [
           {
             ten_TC: { type: String, required: true },
@@ -84,6 +91,7 @@ export class SAN_PHAM {
   })
   phanLoai_SP?: {
     ten_PL: string;
+    cap_PL: number;
     tuyChon_PL: {
       ten_TC: string;
       coAnh_TC: boolean;

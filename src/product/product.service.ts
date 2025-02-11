@@ -40,7 +40,8 @@ export class ProductService {
 
     const idTuyChonCoAnh: string[] =
       product.phanLoai_SP
-        ?.flatMap((pl) =>
+        ?.filter((pl) => pl.cap_PL === 1) // Chỉ lấy các phân loại có cap_PL === 1
+        .flatMap((pl) =>
           pl.tuyChon_PL
             .filter((tc) => tc.coAnh_TC === true)
             .map((tc: any) => tc._id?.toString())
@@ -56,20 +57,28 @@ export class ProductService {
 
     product.anh_SP = productImages.anh_SP_uploaded;
     product.anhBia_SP = productImageCover.anh_SP_uploaded;
-    if (product.phanLoai_SP && productOptionImages.anh_TC_uploaded.length > 0) {
+    if (
+      product.phanLoai_SP &&
+      product.phanLoai_SP.some((pl) => pl.cap_PL === 1) && // Kiểm tra có ít nhất một phân loại có cap_PL === 1
+      productOptionImages.anh_TC_uploaded.length > 0
+    ) {
       let index = 0;
-      product.phanLoai_SP.forEach((phanLoai) => {
-        phanLoai.tuyChon_PL.forEach((tuyChon) => {
-          if (
-            tuyChon.coAnh_TC === true &&
-            index < productOptionImages.anh_TC_uploaded.length
-          ) {
-            tuyChon.anh_TC = productOptionImages.anh_TC_uploaded[index];
-            index++;
-          }
+
+      product.phanLoai_SP
+        .filter((phanLoai) => phanLoai.cap_PL === 1) // Chỉ lọc ra phân loại có cap_PL === 1
+        .forEach((phanLoai) => {
+          phanLoai.tuyChon_PL.forEach((tuyChon) => {
+            if (
+              tuyChon.coAnh_TC === true &&
+              index < productOptionImages.anh_TC_uploaded.length
+            ) {
+              tuyChon.anh_TC = productOptionImages.anh_TC_uploaded[index];
+              index++;
+            }
+          });
         });
-      });
     }
+
     return await product.save();
   }
 
@@ -178,9 +187,10 @@ export class ProductService {
 
     const idTuyChonCoAnh: string[] =
       product.phanLoai_SP
-        ?.flatMap((pl) =>
+        ?.filter((pl) => pl.cap_PL === 1) // Chỉ lấy phân loại cấp 1
+        .flatMap((pl) =>
           pl.tuyChon_PL
-            .filter((tc) => tc.coAnh_TC === true && !tc.anh_TC)
+            .filter((tc) => tc.coAnh_TC === true && !tc.anh_TC) // Lọc tùy chọn có ảnh nhưng chưa có ảnh
             .map((tc: any) => tc._id?.toString())
         )
         ?.filter((id): id is string => !!id) || [];

@@ -81,6 +81,18 @@ export class ProductController {
     return this.productService.deleteProduct(id);
   }
 
+  @Get()
+  async getProducts(
+    @Query('p') page: number = 0,
+    @Query('c') categoryId: string = '',
+    @Query('l') limit: number = 12
+  ) {
+    if (categoryId) {
+      return this.productService.getProductsByCategory(page, categoryId, limit);
+    }
+    return this.productService.getProducts(page, limit);
+  }
+
   @Get('search')
   async searchProducts(
     @Query('k') searchKey: string,
@@ -92,18 +104,6 @@ export class ProductController {
     } else if (productId) {
       return this.productService.getProductByCode(productId, limit);
     }
-  }
-
-  @Get('all')
-  async getProducts(
-    @Query('p') page: number = 0,
-    @Query('c') categoryId: string = '',
-    @Query('l') limit: number = 12
-  ) {
-    if (categoryId) {
-      return this.productService.getProductsByCategory(page, categoryId, limit);
-    }
-    return this.productService.getProducts(page, limit);
   }
 
   @Get(':id')

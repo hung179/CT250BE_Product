@@ -8,6 +8,10 @@ import {
   IsNotEmpty,
   IsMongoId,
   IsBoolean,
+  MaxLength,
+  MinLength,
+  Max,
+  Min,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { PartialType } from '@nestjs/mapped-types';
@@ -31,6 +35,9 @@ class TuyChonPLDto {
 class PhanLoaiSPDto {
   @IsString()
   ten_PL!: string;
+
+  @IsString()
+  cap_PL!: number;
 
   @IsArray()
   @Transform(({ value }) =>
@@ -62,6 +69,8 @@ class TTBanHangSPDto {
 export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
+  @Min(1)
+  @Max(99999999)
   ten_SP!: string;
 
   @IsMongoId()
@@ -70,13 +79,21 @@ export class CreateProductDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(3000)
+  @MinLength(100)
   moTa_SP!: string;
 
-  @Transform(({ value }) => Number(value))
+  @Transform(({ value }) => (typeof value === 'string' ? Number(value) : value))
   @IsNumber()
-  trongLuongSP!: number;
+  @Min(1)
+  @Max(999999)
+  trongLuong_SP!: number;
+
+  @IsString()
+  kichThuoc_SP!: string;
 
   @IsArray()
+  @MinLength(1)
   @Transform(({ value }) =>
     typeof value === 'string' ? JSON.parse(value) : value
   )
@@ -84,6 +101,7 @@ export class CreateProductDto {
   @Type(() => TTChiTietSPDto)
   ttChiTiet_SP!: TTChiTietSPDto[];
 
+  @MinLength(1)
   @IsOptional()
   @IsArray()
   @Transform(({ value }) =>
@@ -93,6 +111,7 @@ export class CreateProductDto {
   @Type(() => TTBanHangSPDto)
   ttBanHang_SP?: TTBanHangSPDto[];
 
+  @MaxLength(2)
   @IsOptional()
   @IsArray()
   @Transform(({ value }) =>
