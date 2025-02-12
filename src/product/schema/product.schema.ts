@@ -62,8 +62,8 @@ export class SAN_PHAM {
       {
         tuyChonPhanLoai1_BH: { type: String },
         tuyChonPhanLoai2_BH: { type: String },
-        giaBan_TC: { type: Number, required: true },
-        khoHang_TC: { type: Number, required: true },
+        giaBan_TC: { type: Number, required: true, min: 1000, max: 120000000 },
+        khoHang_TC: { type: Number, required: true, min: 1, max: 999999 },
       },
     ],
   })

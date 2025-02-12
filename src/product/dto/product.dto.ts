@@ -57,10 +57,14 @@ class TTBanHangSPDto {
   @IsString()
   tuyChonPhanLoai2_BH?: string;
 
+  @Min(1000)
+  @Max(120000000)
   @Transform(({ value }) => Number(value))
   @IsNumber()
   giaBan_TC?: number;
 
+  @Min(1)
+  @Max(999999)
   @Transform(({ value }) => Number(value))
   @IsNumber()
   khoHang_TC?: number;
