@@ -73,8 +73,8 @@ class TTBanHangSPDto {
 export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
-  @Min(1)
-  @Max(99999999)
+  @MaxLength(120)
+  @MinLength(10)
   ten_SP!: string;
 
   @IsMongoId()
@@ -97,7 +97,6 @@ export class CreateProductDto {
   kichThuoc_SP!: string;
 
   @IsArray()
-  @MinLength(1)
   @Transform(({ value }) =>
     typeof value === 'string' ? JSON.parse(value) : value
   )
@@ -105,7 +104,6 @@ export class CreateProductDto {
   @Type(() => TTChiTietSPDto)
   ttChiTiet_SP!: TTChiTietSPDto[];
 
-  @MinLength(1)
   @IsOptional()
   @IsArray()
   @Transform(({ value }) =>
@@ -115,7 +113,6 @@ export class CreateProductDto {
   @Type(() => TTBanHangSPDto)
   ttBanHang_SP?: TTBanHangSPDto[];
 
-  @MaxLength(2)
   @IsOptional()
   @IsArray()
   @Transform(({ value }) =>
