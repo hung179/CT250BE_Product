@@ -34,4 +34,8 @@ export class ReviewService {
       throw new NotFoundException('Review không tồn tại');
     }
   }
+
+  async deleteAllReviewProduct(productId: string): Promise<void> {
+    await this.reviewModel.deleteMany({ idSanPham_DG: productId });
+  }
 }

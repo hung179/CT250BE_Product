@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -300,6 +301,7 @@ export class ProductService {
         let maxCode = await this.getMaxProductCode();
         await this.cloudinaryService.deleteFolder(`Product/${id}`);
         await this.deletedCodeService.saveDeletedCode(product.ma_SP, maxCode);
+        await this.reviewService.deleteAllReviewProduct(id);
         await product.deleteOne();
         maxCode = await this.getMaxProductCode();
         await this.deletedCodeService.cleanupDeletedCodes(maxCode);
