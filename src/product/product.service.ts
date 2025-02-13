@@ -13,7 +13,7 @@ import { ReviewService } from '../review/review.service';
 export class ProductService {
   constructor(
     @InjectModel(SAN_PHAM.name) private productModel: Model<ProductDocument>,
-    private cloudinaryService: CloudinaryService, // Tiêm CloudinaryService
+    private cloudinaryService: CloudinaryService,
     private readonly deletedCodeService: DeletedProductCodeService,
     private readonly reviewService: ReviewService
   ) {}
@@ -41,13 +41,13 @@ export class ProductService {
 
     const idTuyChonCoAnh: string[] =
       product.phanLoai_SP
-        ?.filter((pl) => pl.cap_PL === 1) // Chỉ lấy các phân loại có cap_PL === 1
+        ?.filter((pl) => pl.cap_PL === 1)
         .flatMap((pl) =>
           pl.tuyChon_PL
             .filter((tc) => tc.coAnh_TC === true)
             .map((tc: any) => tc._id?.toString())
         )
-        ?.filter((id): id is string => !!id) || []; // Loại bỏ `undefined`
+        ?.filter((id): id is string => !!id) || [];
 
     const productOptionImages =
       await this.cloudinaryService.uploadProductOptionImages(
@@ -60,13 +60,13 @@ export class ProductService {
     product.anhBia_SP = productImageCover.anh_SP_uploaded;
     if (
       product.phanLoai_SP &&
-      product.phanLoai_SP.some((pl) => pl.cap_PL === 1) && // Kiểm tra có ít nhất một phân loại có cap_PL === 1
+      product.phanLoai_SP.some((pl) => pl.cap_PL === 1) &&
       productOptionImages.anh_TC_uploaded.length > 0
     ) {
       let index = 0;
 
       product.phanLoai_SP
-        .filter((phanLoai) => phanLoai.cap_PL === 1) // Chỉ lọc ra phân loại có cap_PL === 1
+        .filter((phanLoai) => phanLoai.cap_PL === 1)
         .forEach((phanLoai) => {
           phanLoai.tuyChon_PL.forEach((tuyChon) => {
             if (
@@ -188,10 +188,10 @@ export class ProductService {
 
     const idTuyChonCoAnh: string[] =
       product.phanLoai_SP
-        ?.filter((pl) => pl.cap_PL === 1) // Chỉ lấy phân loại cấp 1
+        ?.filter((pl) => pl.cap_PL === 1)
         .flatMap((pl) =>
           pl.tuyChon_PL
-            .filter((tc) => tc.coAnh_TC === true && !tc.anh_TC) // Lọc tùy chọn có ảnh nhưng chưa có ảnh
+            .filter((tc) => tc.coAnh_TC === true && !tc.anh_TC)
             .map((tc: any) => tc._id?.toString())
         )
         ?.filter((id): id is string => !!id) || [];
@@ -267,10 +267,8 @@ export class ProductService {
   private async xoaAnhTuyChon(ttAnhXoa_TC?: string[]) {
     if (!ttAnhXoa_TC || ttAnhXoa_TC.length === 0) return;
 
-    // 1️⃣ Xóa ảnh trên Cloudinary
     await this.cloudinaryService.deleteImages(ttAnhXoa_TC);
 
-    // 2️⃣ Cập nhật MongoDB, xóa ảnh trong tùy chọn sản phẩm
     await this.productModel.updateMany(
       {
         'phanLoai_SP.tuyChon_PL.anh_TC._id': {
@@ -314,19 +312,15 @@ export class ProductService {
 
   /////////////// Lấy nhiều sản phẩm
   async getProducts(page: number = 0, limit) {
-    // Tính toán số sản phẩm cần bỏ qua
     const skip = page * limit;
 
-    // Truy vấn sản phẩm từ database
     const products = await this.productModel
-      .find({ daXoa_SP: false }) // Lọc sản phẩm chưa bị xóa
+      .find({ daXoa_SP: false })
       .skip(skip)
       .limit(limit)
       .exec();
 
-    // Nếu là trang đầu tiên, trả về tổng số sản phẩm và sản phẩm
     if (page === 0) {
-      // Tổng số sản phẩm (để hỗ trợ phân trang trên frontend)
       const totalProducts = await this.productModel.countDocuments({
         daXoa_SP: false,
       });
@@ -358,9 +352,7 @@ export class ProductService {
   // Lấy sản phẩm theo mã sản phẩm
   async getProductByCode(code: number, limit: number): Promise<SAN_PHAM[]> {
     return await this.productModel
-      .find(
-        code ? { ma_SP: code, daXoa_SP: false } : { daXoa_SP: false } // Lọc theo mã sản phẩm nếu có
-      )
+      .find(code ? { ma_SP: code, daXoa_SP: false } : { daXoa_SP: false })
       .limit(limit)
       .exec();
   }
@@ -372,10 +364,10 @@ export class ProductService {
   ): Promise<SAN_PHAM[]> {
     return await this.productModel
       .find(
-        { $text: { $search: searchKey }, daXoa_SP: false }, // Tìm kiếm gần đúng
-        { score: { $meta: 'textScore' } } // Lấy điểm số phù hợp của kết quả
+        { $text: { $search: searchKey }, daXoa_SP: false },
+        { score: { $meta: 'textScore' } }
       )
-      .sort({ score: { $meta: 'textScore' } }) // Sắp xếp theo độ phù hợp
+      .sort({ score: { $meta: 'textScore' } })
       .limit(limit)
       .exec();
   }

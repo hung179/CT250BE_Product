@@ -41,7 +41,7 @@ export class CloudinaryService {
         new Promise<UploadApiResponse | UploadApiErrorResponse>(
           (resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
-              { folder: `Product/${productId}` }, // Không đặt public_id để Cloudinary tự tạo
+              { folder: `Product/${productId}` },
               (error, result) => {
                 if (error) return reject(error);
                 resolve(result!);
@@ -52,7 +52,6 @@ export class CloudinaryService {
         )
     );
 
-    // Chờ tất cả ảnh tải lên và lọc ảnh thành công
     const Images_SP = await Promise.all(uploadPromises_SP);
 
     const anh_SP_uploaded = Images_SP.filter(
@@ -72,7 +71,6 @@ export class CloudinaryService {
       (file, index) =>
         new Promise<UploadApiResponse | UploadApiErrorResponse>(
           (resolve, reject) => {
-            // Tạo `publicId`
             const publicId = `${idTuyChon[index]}`;
 
             const uploadStream = cloudinary.uploader.upload_stream(
@@ -88,7 +86,6 @@ export class CloudinaryService {
         )
     );
 
-    // Chờ tất cả ảnh tải lên và lọc ảnh thành công
     const Images_TC = await Promise.all(uploadPromises_TC);
 
     const anh_TC_uploaded = Images_TC.filter(
@@ -100,19 +97,16 @@ export class CloudinaryService {
 
   async deleteFolder(folderPath: string): Promise<void> {
     try {
-      // 1. Lấy danh sách tất cả ảnh trong thư mục
       const { resources } = await cloudinary.api.resources({
         type: 'upload',
-        prefix: folderPath, // Lấy tất cả ảnh trong thư mục
+        prefix: folderPath,
       });
 
       if (resources.length > 0) {
-        // 2. Xóa tất cả ảnh trong thư mục
         const publicIds = resources.map((file) => file.public_id);
         await cloudinary.api.delete_resources(publicIds);
       }
 
-      // 3. Xóa thư mục (nếu không còn ảnh)
       await cloudinary.api.delete_folder(folderPath);
     } catch (error) {
       console.error(`Lỗi xóa thư mục ${folderPath}:`, error);
@@ -162,7 +156,7 @@ export class CloudinaryService {
         (resolve, reject) => {
           console.log('publicId', publicId);
           const uploadStream = cloudinary.uploader.upload_stream(
-            { public_id: publicId, overwrite: true }, // Giữ nguyên publicId cũ
+            { public_id: publicId, overwrite: true },
             (error, result) => {
               if (error) return reject(error);
               resolve({

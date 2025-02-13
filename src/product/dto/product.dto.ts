@@ -123,7 +123,6 @@ export class CreateProductDto {
   phanLoai_SP?: PhanLoaiSPDto[];
 }
 
-// Cập nhật DTO để chuyển dữ liệu từ form-data thành định dạng đúng
 export class UpdateProductDto extends PartialType(CreateProductDto) {
   @IsOptional()
   @IsArray()

@@ -34,7 +34,6 @@ export class DeletedProductCodeService {
   // Xóa các mã thừa nếu vượt quá mã lớn nhất hiện tại
   async cleanupDeletedCodes(maxCode: number): Promise<void> {
     if (maxCode === 0) {
-      // Không có sản phẩm nào -> Xóa toàn bộ mã đã xóa
       await this.deletedCodeModel.deleteMany({});
     } else {
       await this.deletedCodeModel.deleteMany({ code: { $gt: maxCode } });
