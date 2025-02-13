@@ -28,20 +28,6 @@ export class ReviewService {
       .exec();
   }
 
-  async getReviewsByRating(
-    productId: string,
-    rating: number,
-    page: number,
-    limit: number
-  ): Promise<DANH_GIA[]> {
-    return this.reviewModel
-      .find({ idSanPham_DG: productId, diem_DG: rating })
-      .sort({ ngayTao_DG: -1 })
-      .skip(page * limit)
-      .limit(limit)
-      .exec();
-  }
-
   async deleteReview(id: string): Promise<void> {
     const result = await this.reviewModel.findByIdAndDelete(id);
     if (!result) {

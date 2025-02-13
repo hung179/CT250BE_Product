@@ -22,24 +22,14 @@ export class ReviewController {
   @Get(':id')
   async getReviewsProduct(
     @Param('id') productId: string,
-    @Query('r') rating?: number,
     @Query('p') page: number = 0,
     @Query('l') limit: number = 10
   ) {
-    if (rating) {
-      return this.reviewService.getReviewsByRating(
-        productId,
-        Number(rating),
-        Number(page),
-        Number(limit)
-      );
-    } else {
-      return this.reviewService.getReviewsByProduct(
-        productId,
-        Number(page),
-        Number(limit)
-      );
-    }
+    return this.reviewService.getReviewsByProduct(
+      productId,
+      Number(page),
+      Number(limit)
+    );
   }
 
   @Delete(':id')
