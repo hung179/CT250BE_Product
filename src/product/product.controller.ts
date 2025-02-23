@@ -14,15 +14,21 @@ import { ProductService } from './product.service';
 import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 import { SAN_PHAM } from './schema/product.schema';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { RedisService } from '../redis/redis.service';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Controller('products')
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(
+    private readonly productService: ProductService,
+    private readonly redisService: RedisService
+  ) {}
+
   @Post()
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'anhBia_SP', maxCount: 1 }, // Ảnh bìa (chỉ 1 ảnh)
-      { name: 'anh_SP', maxCount: 4 }, // Nhận tối đa 4 ảnh sản phẩm
+      { name: 'anh_SP', maxCount: 9 }, // Nhận tối đa 4 ảnh sản phẩm
       { name: 'anh_TC', maxCount: 10 }, // Nhận tối đa 10 ảnh tùy chọn
     ])
   )
@@ -35,7 +41,6 @@ export class ProductController {
       anh_TC?: Express.Multer.File[];
     }
   ): Promise<any> {
-    console.log(createProductDto, files);
     return this.productService.createProduct(
       createProductDto,
       files.anh_SP || [],
@@ -66,7 +71,6 @@ export class ProductController {
       anhCapNhat_TC?: Express.Multer.File[];
     }
   ): Promise<SAN_PHAM> {
-    console.log(updateProductDto, files);
     return this.productService.updateProduct(id, updateProductDto, {
       anhBiaCapNhat_SP: files.anhBiaCapNhat_SP?.[0],
       anhMoi_SP: files.anhMoi_SP,
@@ -106,6 +110,11 @@ export class ProductController {
     }
   }
 
+  @Get('order/:id')
+  async getSalesInf(@Param('id') idSalesInf: string) {
+    return this.productService.getProductSalesInf(idSalesInf);
+  }
+
   @Get(':id')
   async getProduct(
     @Param('id') id: string,
@@ -121,5 +130,35 @@ export class ProductController {
     } else if (code) {
       return this.productService.getProductByCode(code, limit);
     }
+  }
+
+  @MessagePattern('giam_kho_san_pham')
+  async giamKhoHang(
+    @Payload()
+    payload: {
+      ttSanPham: {
+        idSanPham_CTHD: string;
+        idTTBanHang_CTHD: string;
+        soLuong_CTHD: number;
+        giaMua_CTHD: number;
+      }[];
+    }
+  ) {
+    return this.productService.capNhatKhoHang(payload.ttSanPham);
+  }
+
+  @MessagePattern('hoan_kho_san_pham')
+  hoanKhoHang(
+    @Payload()
+    payload: {
+      ttSanPham: {
+        idSanPham_CTHD: string;
+        idTTBanHang_CTHD: string;
+        soLuong_CTHD: number;
+        giaMua_CTHD: number;
+      }[];
+    }
+  ) {
+    return this.productService.capNhatKhoHang(payload.ttSanPham, true);
   }
 }
