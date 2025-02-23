@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { SAN_PHAM, ProductDocument } from './schema/product.schema';
@@ -8,6 +12,7 @@ import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service'; // Nhập CloudinaryService để xử lý ảnh
 import { DeletedProductCodeService } from './deletedProductCode/deletedProductCode.service';
 import { ReviewService } from '../review/review.service';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class ProductService {
@@ -15,7 +20,8 @@ export class ProductService {
     @InjectModel(SAN_PHAM.name) private productModel: Model<ProductDocument>,
     private cloudinaryService: CloudinaryService,
     private readonly deletedCodeService: DeletedProductCodeService,
-    private readonly reviewService: ReviewService
+    private readonly reviewService: ReviewService,
+    private readonly redisService: RedisService
   ) {}
 
   ////////////////////// Tạo mới sản phẩm
@@ -404,5 +410,163 @@ export class ProductService {
   async getMaxProductCode(): Promise<number> {
     const lastProduct = await this.productModel.findOne().sort({ ma_SP: -1 });
     return lastProduct ? (lastProduct as SAN_PHAM).ma_SP : 0;
+  }
+
+  async getProductSalesInf(idTTBanHang: string) {
+    const product = await this.productModel.findOne({
+      'ttBanHang_SP._id': idTTBanHang,
+    });
+
+    if (!product) {
+      throw new NotFoundException(
+        `Không tìm thấy sản phẩm với ttBanHang_SP._id = ${idTTBanHang}`
+      );
+    }
+
+    // Lấy thông tin bán hàng có _id khớp
+    const ttBanHang = product.ttBanHang_SP?.find(
+      (item: any) => item._id && item._id.toString() === idTTBanHang
+    );
+    if (!ttBanHang) {
+      throw new NotFoundException(
+        `Không tìm thấy thông tin bán hàng với _id = ${idTTBanHang}`
+      );
+    }
+
+    // Tìm tùy chọn phân loại 1 tương ứng
+    const phanLoai1 = product.phanLoai_SP?.find((pl) =>
+      pl.tuyChon_PL.some((tc) => tc.ten_TC === ttBanHang.tuyChonPhanLoai1_BH)
+    );
+
+    // Lấy thông tin tùy chọn phân loại 1 (nếu có)
+    let anh = phanLoai1
+      ? phanLoai1.tuyChon_PL.find(
+          (tc) => tc.ten_TC === ttBanHang.tuyChonPhanLoai1_BH
+        )?.anh_TC
+      : null;
+
+    if (!anh) {
+      anh = product.anhBia_SP;
+    }
+
+    return {
+      idSP: product._id,
+      ten_SP: product.ten_SP,
+      anh: anh,
+      ttBanHang: ttBanHang,
+    };
+  }
+
+  async capNhatKhoHang(
+    ttSanPham: {
+      idSanPham_CTHD: string;
+      idTTBanHang_CTHD: string;
+      soLuong_CTHD: number;
+      giaMua_CTHD: number;
+    }[],
+    hoanKho: boolean = false
+  ): Promise<{
+    success: boolean;
+    data?: {
+      idSanPham_CTHD: string;
+      idTTBanHang_CTHD: string;
+      soLuong_CTHD: number;
+      giaMua_CTHD: number;
+    }[];
+    error?: string;
+  }> {
+    const session = await this.productModel.startSession();
+    session.startTransaction();
+
+    try {
+      // 🔍 Lấy danh sách ID sản phẩm để truy vấn 1 lần
+      const danhSachIdSanPham = ttSanPham.map((sp) => sp.idSanPham_CTHD);
+      const sanPhams = await this.productModel
+        .find({ _id: { $in: danhSachIdSanPham } })
+        .session(session);
+
+      if (sanPhams.length !== danhSachIdSanPham.length) {
+        await session.abortTransaction();
+        return { success: false, error: `Có sản phẩm không tồn tại.` };
+      }
+
+      const danhSachCapNhat: any[] = [];
+      const ketQuaTraVe: {
+        idSanPham_CTHD: string;
+        idTTBanHang_CTHD: string;
+        soLuong_CTHD: number;
+        giaMua_CTHD: number;
+      }[] = [];
+
+      for (const sp of ttSanPham) {
+        const sanPham = sanPhams.find(
+          (s) => (s._id as any).toString() === sp.idSanPham_CTHD
+        );
+        if (!sanPham) {
+          await session.abortTransaction();
+          return {
+            success: false,
+            error: `Sản phẩm ${sp.idSanPham_CTHD} không tồn tại.`,
+          };
+        }
+
+        const banHang = sanPham.ttBanHang_SP?.find(
+          (item: any) => item._id?.toString() === sp.idTTBanHang_CTHD
+        );
+
+        if (!banHang) {
+          await session.abortTransaction();
+          return {
+            success: false,
+            error: `Không tìm thấy thông tin bán hàng ${sp.idTTBanHang_CTHD} trong sản phẩm ${sp.idSanPham_CTHD}.`,
+          };
+        }
+
+        if (!hoanKho && banHang.khoHang_BH < sp.soLuong_CTHD) {
+          await session.abortTransaction();
+          return {
+            success: false,
+            error: `Sản phẩm ${sp.idSanPham_CTHD} - Kho hàng ${sp.idTTBanHang_CTHD} không đủ hàng.`,
+          };
+        }
+
+        const soLuongMoi = hoanKho
+          ? banHang.khoHang_BH + sp.soLuong_CTHD
+          : banHang.khoHang_BH - sp.soLuong_CTHD;
+
+        danhSachCapNhat.push({
+          updateOne: {
+            filter: {
+              _id: sp.idSanPham_CTHD,
+              'ttBanHang_SP._id': sp.idTTBanHang_CTHD,
+            },
+            update: { $set: { 'ttBanHang_SP.$.khoHang_BH': soLuongMoi } },
+          },
+        });
+
+        ketQuaTraVe.push({
+          idSanPham_CTHD: sp.idSanPham_CTHD,
+          idTTBanHang_CTHD: sp.idTTBanHang_CTHD,
+          soLuong_CTHD: sp.soLuong_CTHD,
+          giaMua_CTHD: banHang.giaBan_BH,
+        });
+      }
+
+      if (danhSachCapNhat.length) {
+        await this.productModel.bulkWrite(danhSachCapNhat, { session });
+      }
+
+      await session.commitTransaction();
+      session.endSession();
+      if (hoanKho) {
+        return { success: true };
+      } else {
+        return { success: true, data: ketQuaTraVe };
+      }
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      return { success: false, error: (error as Error).message.toString() };
+    }
   }
 }
