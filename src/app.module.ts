@@ -4,6 +4,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ProductModule } from './product/product.module';
 import { ReviewModule } from './review/review.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { RedisModule } from './redis/redis.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -23,6 +25,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     ProductModule,
     CloudinaryModule,
     ReviewModule,
+    RedisModule,
   ],
   controllers: [],
   providers: [],
