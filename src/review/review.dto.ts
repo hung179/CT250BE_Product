@@ -8,6 +8,9 @@ export class CreateReviewDto {
   idKhachHang_DG!: string;
 
   @IsString()
+  idHoaDon_DG!: string;
+
+  @IsString()
   noiDung_DG?: string;
 
   @IsInt()

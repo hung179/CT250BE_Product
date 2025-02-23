@@ -6,6 +6,7 @@ import { SAN_PHAM, SAN_PHAMSchema } from './schema/product.schema';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { DeletedProductCodeModule } from './deletedProductCode/deleteProductCode.module';
 import { ReviewModule } from '../review/review.module';
+import { RedisModule } from 'src/redis/redis.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ReviewModule } from '../review/review.module';
     ]),
     DeletedProductCodeModule,
     ReviewModule,
+    RedisModule,
   ],
   controllers: [ProductController],
   providers: [ProductService, CloudinaryService],

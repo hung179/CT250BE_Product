@@ -57,17 +57,26 @@ class TTBanHangSPDto {
   @IsString()
   tuyChonPhanLoai2_BH?: string;
 
+  @Transform(({ value }) => (typeof value === 'string' ? Number(value) : value))
+  @IsNumber()
+  @Min(1)
+  @Max(999999)
+  trongLuong_BH!: number;
+
+  @IsString()
+  kichThuoc_BH!: string;
+
   @Min(1000)
   @Max(120000000)
   @Transform(({ value }) => Number(value))
   @IsNumber()
-  giaBan_TC?: number;
+  giaBan_BH?: number;
 
   @Min(1)
   @Max(999999)
   @Transform(({ value }) => Number(value))
   @IsNumber()
-  khoHang_TC?: number;
+  khoHang_BH?: number;
 }
 
 export class CreateProductDto {
@@ -86,15 +95,6 @@ export class CreateProductDto {
   @MaxLength(3000)
   @MinLength(100)
   moTa_SP!: string;
-
-  @Transform(({ value }) => (typeof value === 'string' ? Number(value) : value))
-  @IsNumber()
-  @Min(1)
-  @Max(999999)
-  trongLuong_SP!: number;
-
-  @IsString()
-  kichThuoc_SP!: string;
 
   @IsArray()
   @Transform(({ value }) =>

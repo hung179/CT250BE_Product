@@ -19,12 +19,6 @@ export class SAN_PHAM {
   @Prop({ type: String, required: true })
   nganhHang_SP!: string;
 
-  @Prop({ type: String, required: true })
-  kichThuoc_SP!: string;
-
-  @Prop({ type: Number, min: 1, max: 999999 })
-  trongLuong_SP!: number;
-
   @Prop({ type: String, required: true, minlength: 100, maxlength: 3000 })
   moTa_SP!: string;
 
@@ -62,16 +56,20 @@ export class SAN_PHAM {
       {
         tuyChonPhanLoai1_BH: { type: String },
         tuyChonPhanLoai2_BH: { type: String },
-        giaBan_TC: { type: Number, required: true, min: 1000, max: 120000000 },
-        khoHang_TC: { type: Number, required: true, min: 1, max: 999999 },
+        kichThuoc_BH: { type: String },
+        trongLuong_BH: { type: Number, min: 1, max: 999999 },
+        giaBan_BH: { type: Number, required: true, min: 1000, max: 120000000 },
+        khoHang_BH: { type: Number, required: true, min: 1, max: 999999 },
       },
     ],
   })
   ttBanHang_SP?: {
     tuyChonPhanLoai1_BH: string;
     tuyChonPhanLoai2_BH: string;
-    giaBan_TC: number;
-    khoHang_TC: number;
+    kichThuoc_BH: string;
+    trongLuong_BH: number;
+    giaBan_BH: number;
+    khoHang_BH: number;
   }[];
 
   @Prop({
@@ -81,7 +79,7 @@ export class SAN_PHAM {
         cap_PL: Number,
         tuyChon_PL: [
           {
-            ten_TC: { type: String, required: true },
+            ten_TC: { type: String },
             coAnh_TC: { type: Boolean, default: false },
             anh_TC: { type: { public_id: String, url: String } },
           },

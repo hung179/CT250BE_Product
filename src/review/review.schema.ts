@@ -15,6 +15,9 @@ export class DANH_GIA extends Document {
   idKhachHang_DG!: string;
 
   @Prop({ required: true })
+  idHoaDon_DG!: string;
+
+  @Prop({ required: true })
   noiDung_DG?: string;
 
   @Prop({ required: true, min: 1, max: 5 })
