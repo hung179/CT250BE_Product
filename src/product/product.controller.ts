@@ -161,4 +161,14 @@ export class ProductController {
   ) {
     return this.productService.capNhatKhoHang(payload.ttSanPham, true);
   }
+
+  @MessagePattern('test2')
+  test(
+    @Payload()
+    payload: {
+      data: string;
+    }
+  ) {
+    return payload.data;
+  }
 }
