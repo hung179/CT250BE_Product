@@ -1,30 +1,22 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Delete,
-  Body,
-  Param,
-  Query,
-} from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './review.dto';
 
-@Controller('reviews')
+@Controller()
 export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
-  @Post()
-  async createReview(@Body() createReviewDto: CreateReviewDto) {
+  @MessagePattern('review_create')
+  async createReview(@Payload() createReviewDto: CreateReviewDto) {
     return this.reviewService.createReview(createReviewDto);
   }
 
-  @Get(':id')
+  @MessagePattern('review_get-product')
   async getReviewsProduct(
-    @Param('id') productId: string,
-    @Query('p') page: number = 0,
-    @Query('l') limit: number = 10
+    @Payload() data: { productId: string; page?: number; limit?: number }
   ) {
+    const { productId, page = 0, limit = 10 } = data;
     return this.reviewService.getReviewsByProduct(
       productId,
       Number(page),
@@ -32,8 +24,8 @@ export class ReviewController {
     );
   }
 
-  @Delete(':id')
-  async deleteReview(@Param('id') id: string) {
+  @MessagePattern('review_delete-all-product')
+  async deleteReview(@Payload() id: string) {
     return this.reviewService.deleteReview(id);
   }
 }

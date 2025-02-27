@@ -10,32 +10,59 @@ export class ReviewService {
     @InjectModel(DANH_GIA.name) private reviewModel: Model<DANH_GIA>
   ) {}
 
-  async createReview(createReviewDto: CreateReviewDto): Promise<DANH_GIA> {
-    const review = new this.reviewModel(createReviewDto);
-    return review.save();
+  async createReview(
+    createReviewDto: CreateReviewDto
+  ): Promise<{ success: boolean; data?: DANH_GIA; error?: any }> {
+    try {
+      const review = new this.reviewModel(createReviewDto);
+      const savedReview = await review.save();
+      return { success: true, data: savedReview };
+    } catch (error) {
+      return { success: false, error };
+    }
   }
 
   async getReviewsByProduct(
     productId: string,
     page: number,
     limit: number
-  ): Promise<DANH_GIA[]> {
-    return this.reviewModel
-      .find({ idSanPham_DG: productId })
-      .sort({ ngayTao_DG: -1 })
-      .skip(page * limit)
-      .limit(limit)
-      .exec();
-  }
-
-  async deleteReview(id: string): Promise<void> {
-    const result = await this.reviewModel.findByIdAndDelete(id);
-    if (!result) {
-      throw new NotFoundException('Review không tồn tại');
+  ): Promise<{ success: boolean; data?: DANH_GIA[]; error?: any }> {
+    try {
+      const reviews = await this.reviewModel
+        .find({ idSanPham_DG: productId })
+        .sort({ ngayTao_DG: -1 })
+        .skip(page * limit)
+        .limit(limit)
+        .exec();
+      if (!reviews) {
+        throw new NotFoundException('Review không tồn tại');
+      }
+      return { success: true, data: reviews };
+    } catch (error) {
+      return { success: false, error };
     }
   }
 
-  async deleteAllReviewProduct(productId: string): Promise<void> {
-    await this.reviewModel.deleteMany({ idSanPham_DG: productId });
+  async deleteReview(id: string): Promise<{ success: boolean; error?: any }> {
+    try {
+      const result = await this.reviewModel.findByIdAndDelete(id);
+      if (!result) {
+        throw new NotFoundException('Review không tồn tại');
+      }
+      return { success: true };
+    } catch (error) {
+      return { success: false, error };
+    }
+  }
+
+  async deleteAllReviewProduct(
+    productId: string
+  ): Promise<{ success: boolean; error?: any }> {
+    try {
+      await this.reviewModel.deleteMany({ idSanPham_DG: productId });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error };
+    }
   }
 }
