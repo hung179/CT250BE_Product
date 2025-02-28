@@ -27,9 +27,6 @@ class TTChiTietSPDto {
 class TuyChonPLDto {
   @IsString()
   ten_TC!: string;
-
-  @IsBoolean()
-  anh_TC?: boolean;
 }
 
 class PhanLoaiSPDto {
@@ -77,6 +74,9 @@ class TTBanHangSPDto {
   @Transform(({ value }) => Number(value))
   @IsNumber()
   khoHang_BH?: number;
+
+  @IsBoolean()
+  coAnh_BH?: boolean;
 }
 
 export class CreateProductDto {
@@ -111,7 +111,7 @@ export class CreateProductDto {
   )
   @ValidateNested({ each: true })
   @Type(() => TTBanHangSPDto)
-  ttBanHang_SP?: TTBanHangSPDto[];
+  ttBanHang_SP!: TTBanHangSPDto[];
 
   @IsOptional()
   @IsArray()
@@ -136,7 +136,7 @@ export class UpdateProductDto extends PartialType(CreateProductDto) {
   @Transform(({ value }) =>
     typeof value === 'string' ? JSON.parse(value) : value
   )
-  ttAnhCapNhat_TC?: string[];
+  ttAnhCapNhat_BH?: string[];
 
   @IsOptional()
   @IsArray()
@@ -150,7 +150,7 @@ export class UpdateProductDto extends PartialType(CreateProductDto) {
   @Transform(({ value }) =>
     typeof value === 'string' ? JSON.parse(value) : value
   )
-  ttAnhXoa_TC?: string[];
+  ttAnhXoa_BH?: string[];
 
   @IsOptional()
   @IsBoolean()

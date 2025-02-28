@@ -60,16 +60,20 @@ export class SAN_PHAM {
         trongLuong_BH: { type: Number, min: 1, max: 999999 },
         giaBan_BH: { type: Number, required: true, min: 1000, max: 120000000 },
         khoHang_BH: { type: Number, required: true, min: 1, max: 999999 },
+        coAnh_BH: { type: Boolean, default: false },
+        anh_BH: { type: { public_id: String, url: String } },
       },
     ],
   })
-  ttBanHang_SP?: {
+  ttBanHang_SP!: {
     tuyChonPhanLoai1_BH: string;
     tuyChonPhanLoai2_BH: string;
     kichThuoc_BH: string;
     trongLuong_BH: number;
     giaBan_BH: number;
     khoHang_BH: number;
+    coAnh_BH: boolean;
+    anh_BH: { public_id: string; url: string };
   }[];
 
   @Prop({
@@ -80,8 +84,6 @@ export class SAN_PHAM {
         tuyChon_PL: [
           {
             ten_TC: { type: String },
-            coAnh_TC: { type: Boolean, default: false },
-            anh_TC: { type: { public_id: String, url: String } },
           },
         ],
       },
@@ -92,8 +94,6 @@ export class SAN_PHAM {
     cap_PL: number;
     tuyChon_PL: {
       ten_TC: string;
-      coAnh_TC: boolean;
-      anh_TC: { public_id: string; url: string };
     }[];
   }[];
 }

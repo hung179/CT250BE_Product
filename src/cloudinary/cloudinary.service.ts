@@ -90,14 +90,14 @@ export class CloudinaryService {
   // Tải ảnh tùy chọn sản phẩm
   async uploadProductOptionImages(
     productId: string,
-    anh_TC: Express.Multer.File[],
+    anh_BH: Express.Multer.File[],
     idTuyChon: string[]
-  ): Promise<{ anh_TC_uploaded: { public_id: string; url: string }[] }> {
-    if (!anh_TC || anh_TC.length === 0)
+  ): Promise<{ anh_BH_uploaded: { public_id: string; url: string }[] }> {
+    if (!anh_BH || anh_BH.length === 0)
       throw new BadRequestException('Không có ảnh tùy chọn được cung cấp');
 
     try {
-      const uploadPromises_TC = anh_TC.map(
+      const uploadPromises_BH = anh_BH.map(
         (file, index) =>
           new Promise<UploadApiResponse | UploadApiErrorResponse>(
             (resolve, reject) => {
@@ -119,12 +119,12 @@ export class CloudinaryService {
           )
       );
 
-      const Images_TC = await Promise.all(uploadPromises_TC);
-      const anh_TC_uploaded = Images_TC.filter(
+      const Images_BH = await Promise.all(uploadPromises_BH);
+      const anh_BH_uploaded = Images_BH.filter(
         (img): img is UploadApiResponse => 'public_id' in img && 'url' in img
       ).map((img) => ({ public_id: img.public_id, url: img.url }));
 
-      return { anh_TC_uploaded };
+      return { anh_BH_uploaded };
     } catch (error) {
       throw new InternalServerErrorException('Không thể tải ảnh');
     }

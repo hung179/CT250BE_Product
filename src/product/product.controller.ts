@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { ProductService } from './product.service';
-import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
+import { CreateProductDto, UpdateProductDto } from './product.dto';
 import { RedisService } from '../redis/redis.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 
@@ -193,6 +193,11 @@ export class ProductController {
   @MessagePattern('product_delete')
   async deleteProduct(@Payload() id: string) {
     return this.productService.deleteProduct(id);
+  }
+
+  @MessagePattern('product_hidden-show')
+  async hiddenShowProduct(@Payload() state: boolean, id: string) {
+    return this.productService.hiddenShowProduct(id, state);
   }
 
   @MessagePattern('product_get-sale-info')

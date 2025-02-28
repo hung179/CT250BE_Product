@@ -31,7 +31,7 @@ export class DeletedProductCodeService {
     return typeof maxCode === 'number' ? maxCode + 1 : 1;
   }
 
-  // Xóa các mã thừa nếu vượt quá mã lớn nhất hiện tại
+  // Xóa các mã thừa nếu vượt quá mã lớn nhất hiện tại (tránh lưu trữ dư thừa)
   async cleanupDeletedCodes(maxCode: number): Promise<void> {
     if (maxCode === 0) {
       await this.deletedCodeModel.deleteMany({});

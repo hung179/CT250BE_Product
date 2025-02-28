@@ -5,10 +5,10 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { SAN_PHAM, ProductDocument } from './schema/product.schema';
-import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
+import { SAN_PHAM, ProductDocument } from './product.schema';
+import { CreateProductDto, UpdateProductDto } from './product.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
-import { DeletedProductCodeService } from './deletedProductCode/deletedProductCode.service';
+import { DeletedProductCodeService } from '../deletedProductCode/deletedProductCode.service';
 import { ReviewService } from '../review/review.service';
 import { RedisService } from 'src/redis/redis.service';
 
@@ -26,7 +26,7 @@ export class ProductService {
   async createProduct(
     dto: CreateProductDto,
     anh_SP: Express.Multer.File[],
-    anh_TC: Express.Multer.File[],
+    anh_BH: Express.Multer.File[],
     anhBia_SP: Express.Multer.File
   ): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
@@ -52,45 +52,35 @@ export class ProductService {
       if (!productImages)
         throw new InternalServerErrorException('Không thể tải ảnh sản phẩm');
 
-      const idTuyChonCoAnh: string[] =
-        product.phanLoai_SP
-          ?.filter((pl) => pl.cap_PL === 1)
-          .flatMap((pl) =>
-            pl.tuyChon_PL
-              .filter((tc) => tc.coAnh_TC === true)
-              .map((tc: any) => tc._id?.toString() as string)
-          )
+      const idBanHangCoAnh: string[] =
+        product.ttBanHang_SP
+          .filter((bh) => bh.coAnh_BH === true)
+          .map((bh: any) => bh._id?.toString() as string)
           ?.filter((id): id is string => !!id) || [];
 
       const productOptionImages =
         await this.cloudinaryService.uploadProductOptionImages(
           productId,
-          anh_TC,
-          idTuyChonCoAnh
+          anh_BH,
+          idBanHangCoAnh
         );
 
       product.anh_SP = productImages.anh_SP_uploaded;
       product.anhBia_SP = productImageCover.anh_SP_uploaded;
       if (
-        product.phanLoai_SP &&
-        product.phanLoai_SP.some((pl) => pl.cap_PL === 1) &&
-        productOptionImages.anh_TC_uploaded.length > 0
+        product.ttBanHang_SP &&
+        productOptionImages.anh_BH_uploaded.length > 0
       ) {
         let index = 0;
-
-        product.phanLoai_SP
-          .filter((phanLoai) => phanLoai.cap_PL === 1)
-          .forEach((phanLoai) => {
-            phanLoai.tuyChon_PL.forEach((tuyChon) => {
-              if (
-                tuyChon.coAnh_TC === true &&
-                index < productOptionImages.anh_TC_uploaded.length
-              ) {
-                tuyChon.anh_TC = productOptionImages.anh_TC_uploaded[index];
-                index++;
-              }
-            });
-          });
+        product.ttBanHang_SP.forEach((bh) => {
+          if (
+            bh.coAnh_BH === true &&
+            index < productOptionImages.anh_BH_uploaded.length
+          ) {
+            bh.anh_BH = productOptionImages.anh_BH_uploaded[index];
+            index++;
+          }
+        });
       }
       const savedProduct = await product.save();
       return { success: true, data: savedProduct };
@@ -109,9 +99,9 @@ export class ProductService {
     files: {
       anhBiaCapNhat_SP: Express.Multer.File | undefined;
       anhMoi_SP: Express.Multer.File[] | undefined;
-      anhMoi_TC: Express.Multer.File[] | undefined;
+      anhMoi_BH: Express.Multer.File[] | undefined;
       anhCapNhat_SP: Express.Multer.File[] | undefined;
-      anhCapNhat_TC: Express.Multer.File[] | undefined;
+      anhCapNhat_BH: Express.Multer.File[] | undefined;
     }
   ): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
@@ -142,14 +132,14 @@ export class ProductService {
         updateData.ttAnhCapNhat_SP,
         files.anhCapNhat_SP
       );
-      await this.themAnhTuyChon(id, updatedProduct, files.anhMoi_TC);
-      await this.capNhatAnhTuyChon(
+      await this.themAnhBanHang(id, updatedProduct, files.anhMoi_BH);
+      await this.capNhatAnhBanHang(
         updatedProduct,
-        updateData.ttAnhCapNhat_TC,
-        files.anhCapNhat_TC
+        updateData.ttAnhCapNhat_BH,
+        files.anhCapNhat_BH
       );
       await this.xoaAnhSanPham(updateData.ttAnhXoa_SP);
-      await this.xoaAnhTuyChon(updateData.ttAnhXoa_TC);
+      await this.xoaAnhBanHang(updateData.ttAnhXoa_BH);
 
       return { success: true };
     } catch (error) {
@@ -206,69 +196,61 @@ export class ProductService {
     await product.save();
   }
 
-  private async themAnhTuyChon(
+  private async themAnhBanHang(
     productId: string,
     product: any,
     files?: Express.Multer.File[]
   ) {
     if (!files || files.length === 0) return;
 
-    const idTuyChonCoAnh: string[] =
-      product.phanLoai_SP
-        ?.filter((pl) => pl.cap_PL === 1)
-        .flatMap((pl) =>
-          pl.tuyChon_PL
-            .filter((tc) => tc.coAnh_TC === true && !tc.anh_TC)
-            .map((tc: any) => tc._id?.toString())
-        )
+    const idBanHangCoAnh: string[] =
+      product.ttBanHang_SP
+        .filter((bh) => bh.coAnh_BH === true && !bh.anh_BH)
+        .map((bh: any) => bh._id?.toString() as string)
         ?.filter((id): id is string => !!id) || [];
 
-    if (idTuyChonCoAnh.length === 0) return;
+    if (idBanHangCoAnh.length === 0) return;
 
     const productOptionImages =
       await this.cloudinaryService.uploadProductOptionImages(
         productId,
         files,
-        idTuyChonCoAnh
+        idBanHangCoAnh
       );
 
     let index = 0;
-    product.phanLoai_SP?.forEach((pl) => {
-      pl.tuyChon_PL.forEach((tuyChon) => {
-        if (tuyChon.coAnh_TC === true && !tuyChon.anh_TC) {
-          tuyChon.anh_TC = productOptionImages.anh_TC_uploaded[index];
-          index++;
-        }
-      });
+    product.ttBanHang_SP.forEach((bh) => {
+      if (bh.coAnh_BH === true && !bh.anh_BH) {
+        bh.anh_BH = productOptionImages.anh_BH_uploaded[index];
+        index++;
+      }
     });
 
     await product.save();
   }
 
-  private async capNhatAnhTuyChon(
+  private async capNhatAnhBanHang(
     product: any,
-    ttAnhCapNhat_TC?: string[],
+    ttAnhCapNhat_BH?: string[],
     files?: Express.Multer.File[]
   ) {
-    if (!ttAnhCapNhat_TC || !files || files.length !== ttAnhCapNhat_TC.length)
+    if (!ttAnhCapNhat_BH || !files || files.length !== ttAnhCapNhat_BH.length)
       return;
 
     const updatedImages = await this.cloudinaryService.updateImages(
-      ttAnhCapNhat_TC,
+      ttAnhCapNhat_BH,
       files
     );
 
-    product.phanLoai_SP?.forEach((pl) => {
-      pl.tuyChon_PL.forEach((tuyChon) => {
-        if (tuyChon.coAnh_TC === true && tuyChon.anh_TC) {
-          const updatedImage = updatedImages.find(
-            (img) => img.public_id === tuyChon.anh_TC?.public_id
-          );
-          if (updatedImage) {
-            tuyChon.anh_TC = updatedImage;
-          }
+    product.ttBanHang_SP?.forEach((banHang) => {
+      if (banHang.coAnh_BH === true && banHang.anh_BH) {
+        const updatedImage = updatedImages.find(
+          (img) => img.public_id === banHang.anh_BH?.public_id
+        );
+        if (updatedImage) {
+          banHang.anh_BH = updatedImage;
         }
-      });
+      }
     });
 
     await product.save();
@@ -291,25 +273,19 @@ export class ProductService {
     );
   }
 
-  private async xoaAnhTuyChon(ttAnhXoa_TC?: string[]) {
-    if (!ttAnhXoa_TC || ttAnhXoa_TC.length === 0) return;
+  private async xoaAnhBanHang(ttAnhXoa_BH?: string[]) {
+    if (!ttAnhXoa_BH || ttAnhXoa_BH.length === 0) return;
 
-    await this.cloudinaryService.deleteImages(ttAnhXoa_TC);
+    await this.cloudinaryService.deleteImages(ttAnhXoa_BH);
 
     await this.productModel.updateMany(
       {
-        'phanLoai_SP.tuyChon_PL.anh_TC._id': {
-          $in: ttAnhXoa_TC.map((id) => new Types.ObjectId(id)),
+        'ttBanHang_SP.anh_BH._id': {
+          $in: ttAnhXoa_BH.map((id) => new Types.ObjectId(id)),
         },
       },
       {
-        $pull: {
-          'phanLoai_SP.$[].tuyChon_PL': {
-            'anh_TC._id': {
-              $in: ttAnhXoa_TC.map((id) => new Types.ObjectId(id)),
-            },
-          },
-        },
+        $unset: { 'ttBanHang_SP.$[].anh_BH': 1 },
       }
     );
   }
@@ -339,6 +315,26 @@ export class ProductService {
         }
       }
       return { success: true };
+    } catch (error) {
+      return { success: false, error: error };
+    }
+  }
+
+  async hiddenShowProduct(
+    id: string,
+    state: boolean
+  ): Promise<{ success: boolean; data?: any; error?: any }> {
+    try {
+      const result = await this.productModel.updateOne(
+        { _id: id },
+        { daAn_SP: state }
+      );
+
+      if (result.matchedCount === 0) {
+        throw new NotFoundException('Không tìm thấy sản phẩm');
+      }
+
+      return { success: true, data: result };
     } catch (error) {
       return { success: false, error: error };
     }
