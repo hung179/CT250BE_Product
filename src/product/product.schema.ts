@@ -34,9 +34,6 @@ export class SAN_PHAM {
   @Prop({ default: false })
   daAn_SP?: boolean;
 
-  @Prop({ type: Number, required: true })
-  trongLuongSP!: number;
-
   @Prop({
     type: [
       {
@@ -56,31 +53,26 @@ export class SAN_PHAM {
       {
         tuyChonPhanLoai1_BH: { type: String },
         tuyChonPhanLoai2_BH: { type: String },
-        kichThuoc_BH: { type: String },
         trongLuong_BH: { type: Number, min: 1, max: 999999 },
         giaBan_BH: { type: Number, required: true, min: 1000, max: 120000000 },
         khoHang_BH: { type: Number, required: true, min: 1, max: 999999 },
-        coAnh_BH: { type: Boolean, default: false },
-        anh_BH: { type: { public_id: String, url: String } },
+        doanhSo_BH: { type: Number, default: 0 },
       },
     ],
   })
   ttBanHang_SP!: {
     tuyChonPhanLoai1_BH: string;
     tuyChonPhanLoai2_BH: string;
-    kichThuoc_BH: string;
     trongLuong_BH: number;
     giaBan_BH: number;
     khoHang_BH: number;
-    coAnh_BH: boolean;
-    anh_BH: { public_id: string; url: string };
+    doanhSo_BH: number;
   }[];
 
   @Prop({
     type: [
       {
         ten_PL: String,
-        cap_PL: Number,
         tuyChon_PL: [
           {
             ten_TC: { type: String },

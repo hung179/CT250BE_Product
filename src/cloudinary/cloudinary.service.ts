@@ -11,6 +11,7 @@ import {
   v2 as cloudinary,
 } from 'cloudinary';
 import * as toStream from 'buffer-to-stream';
+import * as streamifier from 'streamifier';
 
 @Injectable()
 export class CloudinaryService {
@@ -27,7 +28,7 @@ export class CloudinaryService {
         (resolve, reject) => {
           const publicId = `${productId}`;
           const uploadStream = cloudinary.uploader.upload_stream(
-            { folder: `Product/${productId}`, public_id: publicId },
+            { folder: `Products/${productId}`, public_id: publicId },
             (error, result) => {
               if (error)
                 return reject(
@@ -38,7 +39,7 @@ export class CloudinaryService {
               resolve({ public_id: result!.public_id, url: result!.url });
             }
           );
-          toStream(anh_SP.buffer).pipe(uploadStream);
+          streamifier.createReadStream(anh_SP.buffer).pipe(uploadStream);
         }
       ).then((anh_SP_uploaded) => ({ anh_SP_uploaded }));
     } catch (error) {
@@ -60,7 +61,7 @@ export class CloudinaryService {
           new Promise<UploadApiResponse | UploadApiErrorResponse>(
             (resolve, reject) => {
               const uploadStream = cloudinary.uploader.upload_stream(
-                { folder: `Product/${productId}` },
+                { folder: `Products/${productId}` },
                 (error, result) => {
                   if (error)
                     return reject(
@@ -71,7 +72,7 @@ export class CloudinaryService {
                   resolve(result!);
                 }
               );
-              toStream(file.buffer).pipe(uploadStream);
+              streamifier.createReadStream(file.buffer).pipe(uploadStream);
             }
           )
       );
@@ -82,49 +83,6 @@ export class CloudinaryService {
       ).map((img) => ({ public_id: img.public_id, url: img.url }));
 
       return { anh_SP_uploaded };
-    } catch (error) {
-      throw new InternalServerErrorException('Không thể tải ảnh');
-    }
-  }
-
-  // Tải ảnh tùy chọn sản phẩm
-  async uploadProductOptionImages(
-    productId: string,
-    anh_BH: Express.Multer.File[],
-    idTuyChon: string[]
-  ): Promise<{ anh_BH_uploaded: { public_id: string; url: string }[] }> {
-    if (!anh_BH || anh_BH.length === 0)
-      throw new BadRequestException('Không có ảnh tùy chọn được cung cấp');
-
-    try {
-      const uploadPromises_BH = anh_BH.map(
-        (file, index) =>
-          new Promise<UploadApiResponse | UploadApiErrorResponse>(
-            (resolve, reject) => {
-              const publicId = `${idTuyChon[index]}`;
-              const uploadStream = cloudinary.uploader.upload_stream(
-                { folder: `Product/${productId}`, public_id: publicId },
-                (error, result) => {
-                  if (error)
-                    return reject(
-                      new InternalServerErrorException(
-                        'Lỗi tải ảnh tùy chọn lên Cloudinary'
-                      )
-                    );
-                  resolve(result!);
-                }
-              );
-              toStream(file.buffer).pipe(uploadStream);
-            }
-          )
-      );
-
-      const Images_BH = await Promise.all(uploadPromises_BH);
-      const anh_BH_uploaded = Images_BH.filter(
-        (img): img is UploadApiResponse => 'public_id' in img && 'url' in img
-      ).map((img) => ({ public_id: img.public_id, url: img.url }));
-
-      return { anh_BH_uploaded };
     } catch (error) {
       throw new InternalServerErrorException('Không thể tải ảnh');
     }
@@ -155,76 +113,6 @@ export class CloudinaryService {
       await cloudinary.api.delete_resources(imagesPublicId);
     } catch (error) {
       throw new InternalServerErrorException('Không thể xóa ảnh');
-    }
-  }
-
-  async updateImage(
-    publicId: string,
-    newImage: Express.Multer.File
-  ): Promise<{ public_id: string; url: string }> {
-    if (!newImage)
-      throw new BadRequestException('Không có ảnh mới để cập nhật');
-
-    try {
-      return new Promise<{ public_id: string; url: string }>(
-        (resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            { public_id: publicId, overwrite: true },
-            (error, result) => {
-              if (error)
-                return reject(
-                  new InternalServerErrorException(
-                    'Lỗi cập nhật ảnh trên Cloudinary'
-                  )
-                );
-              resolve({ public_id: result!.public_id, url: result!.url });
-            }
-          );
-          toStream(newImage.buffer).pipe(uploadStream);
-        }
-      ).then((result) => result);
-    } catch (error) {
-      throw new InternalServerErrorException('Không thể cập nhật ảnh');
-    }
-  }
-
-  async updateImages(
-    publicIds: string[],
-    newImages: Express.Multer.File[]
-  ): Promise<{ public_id: string; url: string }[]> {
-    if (publicIds.length !== newImages.length) {
-      throw new BadRequestException(
-        'Số lượng publicId và số lượng ảnh không khớp!'
-      );
-    }
-
-    try {
-      const uploadPromises = publicIds.map((publicId, index) => {
-        return new Promise<{ public_id: string; url: string }>(
-          (resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-              { public_id: publicId, overwrite: true },
-              (error, result) => {
-                if (error)
-                  return reject(
-                    new InternalServerErrorException(
-                      'Lỗi cập nhật ảnh trên Cloudinary'
-                    )
-                  );
-                resolve({
-                  public_id: result!.public_id,
-                  url: result!.secure_url,
-                });
-              }
-            );
-            toStream(newImages[index].buffer).pipe(uploadStream);
-          }
-        );
-      });
-
-      return await Promise.all(uploadPromises);
-    } catch (error) {
-      throw new InternalServerErrorException('Không thể cập nhật ảnh');
     }
   }
 }

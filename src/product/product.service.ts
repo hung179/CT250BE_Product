@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import { SAN_PHAM, ProductDocument } from './product.schema';
 import { CreateProductDto, UpdateProductDto } from './product.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
@@ -25,9 +26,8 @@ export class ProductService {
   // Tạo mới sản phẩm
   async createProduct(
     dto: CreateProductDto,
-    anh_SP: Express.Multer.File[],
-    anh_BH: Express.Multer.File[],
-    anhBia_SP: Express.Multer.File
+    fileAnh_SP: any,
+    fileAnhBia_SP: any
   ): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
       const maxCode = await this.getMaxProductCode();
@@ -38,7 +38,7 @@ export class ProductService {
       const productImageCover =
         await this.cloudinaryService.uploadProductImageCover(
           productId,
-          anhBia_SP
+          fileAnhBia_SP
         );
       if (!productImageCover)
         throw new InternalServerErrorException(
@@ -46,45 +46,16 @@ export class ProductService {
         );
       const productImages = await this.cloudinaryService.uploadProductImages(
         productId,
-        anh_SP
+        fileAnh_SP
       );
-
       if (!productImages)
         throw new InternalServerErrorException('Không thể tải ảnh sản phẩm');
-
-      const idBanHangCoAnh: string[] =
-        product.ttBanHang_SP
-          .filter((bh) => bh.coAnh_BH === true)
-          .map((bh: any) => bh._id?.toString() as string)
-          ?.filter((id): id is string => !!id) || [];
-
-      const productOptionImages =
-        await this.cloudinaryService.uploadProductOptionImages(
-          productId,
-          anh_BH,
-          idBanHangCoAnh
-        );
-
       product.anh_SP = productImages.anh_SP_uploaded;
       product.anhBia_SP = productImageCover.anh_SP_uploaded;
-      if (
-        product.ttBanHang_SP &&
-        productOptionImages.anh_BH_uploaded.length > 0
-      ) {
-        let index = 0;
-        product.ttBanHang_SP.forEach((bh) => {
-          if (
-            bh.coAnh_BH === true &&
-            index < productOptionImages.anh_BH_uploaded.length
-          ) {
-            bh.anh_BH = productOptionImages.anh_BH_uploaded[index];
-            index++;
-          }
-        });
-      }
       const savedProduct = await product.save();
       return { success: true, data: savedProduct };
     } catch (error) {
+      console.log(error);
       return {
         success: false,
         error: error,
@@ -97,11 +68,8 @@ export class ProductService {
     id: string,
     updateProductDto: UpdateProductDto,
     files: {
-      anhBiaCapNhat_SP: Express.Multer.File | undefined;
-      anhMoi_SP: Express.Multer.File[] | undefined;
-      anhMoi_BH: Express.Multer.File[] | undefined;
-      anhCapNhat_SP: Express.Multer.File[] | undefined;
-      anhCapNhat_BH: Express.Multer.File[] | undefined;
+      fileAnh_SP: any;
+      fileAnhBia_SP: any;
     }
   ): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
@@ -125,21 +93,9 @@ export class ProductService {
         );
       }
       // Cập nhật ảnh
-      await this.capNhatAnhBia(id, updatedProduct, files.anhBiaCapNhat_SP);
-      await this.themAnhSanPham(id, updatedProduct, files.anhMoi_SP);
-      await this.capNhatAnhSanPham(
-        updatedProduct,
-        updateData.ttAnhCapNhat_SP,
-        files.anhCapNhat_SP
-      );
-      await this.themAnhBanHang(id, updatedProduct, files.anhMoi_BH);
-      await this.capNhatAnhBanHang(
-        updatedProduct,
-        updateData.ttAnhCapNhat_BH,
-        files.anhCapNhat_BH
-      );
-      await this.xoaAnhSanPham(updateData.ttAnhXoa_SP);
-      await this.xoaAnhBanHang(updateData.ttAnhXoa_BH);
+      await this.capNhatAnhBia(id, updatedProduct, files.fileAnhBia_SP);
+      await this.themAnhSanPham(id, updatedProduct, files.fileAnh_SP);
+      await this.xoaAnhSanPham(id, updateData.ttAnhXoa_SP);
 
       return { success: true };
     } catch (error) {
@@ -155,7 +111,7 @@ export class ProductService {
     if (!file) return;
     const productImageCover =
       await this.cloudinaryService.uploadProductImageCover(productId, file);
-    product.anhBia_SP = productImageCover.anh_SP_uploaded;
+    product.anhBia_SP = productImageCover;
     await product.save();
   }
 
@@ -176,116 +132,17 @@ export class ProductService {
     await product.save();
   }
 
-  private async capNhatAnhSanPham(
-    product: any,
-    ttAnhCapNhat_SP?: string[],
-    files?: Express.Multer.File[]
-  ) {
-    if (!ttAnhCapNhat_SP || !files || files.length !== ttAnhCapNhat_SP.length)
-      return;
-    const updatedImages = await this.cloudinaryService.updateImages(
-      ttAnhCapNhat_SP,
-      files
-    );
-    product.anh_SP = (product.anh_SP ?? []).map((image) => {
-      const updatedImage = updatedImages.find(
-        (img) => img.public_id === image.public_id
-      );
-      return updatedImage ? { ...image, url: updatedImage.url } : image;
-    });
-    await product.save();
-  }
-
-  private async themAnhBanHang(
-    productId: string,
-    product: any,
-    files?: Express.Multer.File[]
-  ) {
-    if (!files || files.length === 0) return;
-
-    const idBanHangCoAnh: string[] =
-      product.ttBanHang_SP
-        .filter((bh) => bh.coAnh_BH === true && !bh.anh_BH)
-        .map((bh: any) => bh._id?.toString() as string)
-        ?.filter((id): id is string => !!id) || [];
-
-    if (idBanHangCoAnh.length === 0) return;
-
-    const productOptionImages =
-      await this.cloudinaryService.uploadProductOptionImages(
-        productId,
-        files,
-        idBanHangCoAnh
-      );
-
-    let index = 0;
-    product.ttBanHang_SP.forEach((bh) => {
-      if (bh.coAnh_BH === true && !bh.anh_BH) {
-        bh.anh_BH = productOptionImages.anh_BH_uploaded[index];
-        index++;
-      }
-    });
-
-    await product.save();
-  }
-
-  private async capNhatAnhBanHang(
-    product: any,
-    ttAnhCapNhat_BH?: string[],
-    files?: Express.Multer.File[]
-  ) {
-    if (!ttAnhCapNhat_BH || !files || files.length !== ttAnhCapNhat_BH.length)
-      return;
-
-    const updatedImages = await this.cloudinaryService.updateImages(
-      ttAnhCapNhat_BH,
-      files
-    );
-
-    product.ttBanHang_SP?.forEach((banHang) => {
-      if (banHang.coAnh_BH === true && banHang.anh_BH) {
-        const updatedImage = updatedImages.find(
-          (img) => img.public_id === banHang.anh_BH?.public_id
-        );
-        if (updatedImage) {
-          banHang.anh_BH = updatedImage;
-        }
-      }
-    });
-
-    await product.save();
-  }
-
-  private async xoaAnhSanPham(ttAnhXoa_SP?: string[]) {
+  private async xoaAnhSanPham(productId: string, ttAnhXoa_SP?: string[]) {
     if (!ttAnhXoa_SP || ttAnhXoa_SP.length === 0) return;
     await this.cloudinaryService.deleteImages(ttAnhXoa_SP);
-    await this.productModel.updateMany(
-      {
-        'anh_SP._id': { $in: ttAnhXoa_SP.map((id) => new Types.ObjectId(id)) },
-      },
+    await this.productModel.updateOne(
+      { _id: productId }, // Chỉ cập nhật sản phẩm cụ thể
       {
         $pull: {
           anh_SP: {
-            _id: { $in: ttAnhXoa_SP.map((id) => new Types.ObjectId(id)) },
+            public_id: { $in: ttAnhXoa_SP },
           },
         },
-      }
-    );
-  }
-
-  private async xoaAnhBanHang(ttAnhXoa_BH?: string[]) {
-    if (!ttAnhXoa_BH || ttAnhXoa_BH.length === 0) return;
-
-    await this.cloudinaryService.deleteImages(ttAnhXoa_BH);
-
-    await this.productModel.updateMany(
-      {
-        'ttBanHang_SP.anh_BH._id': {
-          $in: ttAnhXoa_BH.map((id) => new Types.ObjectId(id)),
-        },
-      },
-      {
-        $unset: { 'ttBanHang_SP.$[].anh_BH': 1 },
       }
     );
   }
@@ -300,19 +157,17 @@ export class ProductService {
         throw new NotFoundException(`Không tìm thấy sản phẩm với ID: ${id}`);
       }
 
-      if (product.daAn_SP === false && product.daXoa_SP === false) {
-        if (product.daXoa_SP === false) {
-          let maxCode = await this.getMaxProductCode();
-          await this.cloudinaryService.deleteFolder(`Product/${id}`);
-          await this.deletedCodeService.saveDeletedCode(product.ma_SP, maxCode);
-          await this.reviewService.deleteAllReviewProduct(id);
-          await product.deleteOne();
-          maxCode = await this.getMaxProductCode();
-          await this.deletedCodeService.cleanupDeletedCodes(maxCode);
-        } else {
-          product.daXoa_SP = true;
-          await product.save();
-        }
+      if (product.daAn_SP === true) {
+        let maxCode = await this.getMaxProductCode();
+        await this.cloudinaryService.deleteFolder(`Products/${id}`);
+        await this.deletedCodeService.saveDeletedCode(product.ma_SP, maxCode);
+        await this.reviewService.deleteAllReviewProduct(id);
+        await product.deleteOne();
+        maxCode = await this.getMaxProductCode();
+        await this.deletedCodeService.cleanupDeletedCodes(maxCode);
+      } else {
+        product.daXoa_SP = true;
+        await product.save();
       }
       return { success: true };
     } catch (error) {
@@ -320,17 +175,16 @@ export class ProductService {
     }
   }
 
-  async hiddenShowProduct(
+  async updateStateProduct(
     id: string,
     state: boolean
   ): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
-      const result = await this.productModel.updateOne(
-        { _id: id },
-        { daAn_SP: state }
-      );
+      const result = await this.productModel
+        .findByIdAndUpdate({ _id: id }, { daAn_SP: state }, { new: true })
+        .select('_id anhBia_SP ttBanHang_SP phanLoai_SP ten_SP ma_SP daAn_SP');
 
-      if (result.matchedCount === 0) {
+      if (!result) {
         throw new NotFoundException('Không tìm thấy sản phẩm');
       }
 
@@ -343,48 +197,47 @@ export class ProductService {
   /////////////// Lấy nhiều sản phẩm
   async getProducts(
     page: number,
-    limit: number
+    limit: number,
+    state?: number
   ): Promise<{ success: boolean; data?: any; error?: any }> {
-    const skip = page * limit;
     try {
-      const products = await this.productModel
-        .find({ daXoa_SP: false })
-        .skip(skip)
-        .limit(limit)
-        .exec();
-      if (!products) throw new NotFoundException('Không tìm thấy sản phẩm');
-      if (page === 0) {
-        const totalProducts = await this.productModel.countDocuments({
-          daXoa_SP: false,
-        });
-        return {
-          success: true,
-          data: {
-            totalProducts,
-            products,
-          },
-        };
+      const skip = page * limit;
+      let filter: any = {};
+
+      if (state === 1) {
+        filter = { daAn_SP: false };
+      } else if (state === 2) {
+        filter = { daAn_SP: true };
       }
-      return { success: true, data: { products } };
+
+      const [products, totalProducts] = await Promise.all([
+        this.productModel
+          .find(filter)
+          .skip(skip)
+          .limit(limit)
+          .select('_id anhBia_SP ttBanHang_SP phanLoai_SP ten_SP ma_SP daAn_SP')
+          .exec(),
+        this.productModel.countDocuments(filter),
+      ]);
+
+      if (products.length === 0) {
+        throw new NotFoundException('Không tìm thấy sản phẩm');
+      }
+
+      return { success: true, data: { totalProducts, products } };
     } catch (error) {
-      return { success: false, error: error };
+      return { success: false, error };
     }
   }
 
   ////////////////////// Lấy sản phẩm theo ID
   async getProductById(
-    id: string,
-    page: number,
-    limit: number
+    id: string
   ): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
       const product = await this.productModel.findById(id);
       if (!product) throw new NotFoundException('Không tìm thấy sản phẩm');
-      const reviews = await this.reviewService.getReviewsByProduct(
-        id,
-        (page = 0),
-        limit
-      );
+      const reviews = await this.reviewService.getReviewsByProduct(id);
       return { success: true, data: { product, reviews } };
     } catch (error) {
       return { success: false, error: error };
@@ -394,20 +247,31 @@ export class ProductService {
   // Lấy sản phẩm theo mã sản phẩm
   async getProductByCode(
     code: number,
-    limit: number
+    page: number,
+    limit: number,
+    state?: number
   ): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
-      const result = await this.productModel
-        .find(code ? { ma_SP: code, daXoa_SP: false } : { daXoa_SP: false })
-        .limit(limit)
-        .exec();
-      if (result) throw new NotFoundException('Không tim thấy sản phẩm');
-      return {
-        success: true,
-        data: result,
-      };
+      const skip = page * limit;
+      const filter: any = { ma_SP: code };
+
+      if (state === 1) {
+        filter.daAn_SP = false;
+      } else if (state === 2) {
+        filter.daAn_SP = true;
+      }
+
+      const [products, totalProducts] = await Promise.all([
+        this.productModel.find(filter).limit(limit).skip(skip).exec(),
+        this.productModel.countDocuments(filter),
+      ]);
+
+      if (products.length === 0)
+        throw new NotFoundException('Không tìm thấy sản phẩm');
+
+      return { success: true, data: { totalProducts, products } };
     } catch (error) {
-      return { success: false, error: error };
+      return { success: false, error };
     }
   }
 
@@ -415,49 +279,66 @@ export class ProductService {
   async getProductBySearchKey(
     searchKey: string,
     page: number,
-    limit: number
+    limit: number,
+    state?: number
   ): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
       const skip = page * limit;
-      const result = await this.productModel
-        .find(
-          { $text: { $search: searchKey }, daXoa_SP: false },
-          { score: { $meta: 'textScore' } }
-        )
-        .sort({ score: { $meta: 'textScore' } })
-        .limit(limit)
-        .skip(skip)
-        .exec();
-      if (result) {
-        throw new NotFoundException('Không tim thấy sản phẩm');
+      const filter: any = { $text: { $search: searchKey } };
+
+      if (state === 1) {
+        filter.daAn_SP = false;
+      } else if (state === 2) {
+        filter.daAn_SP = true;
       }
-      return { success: true, data: result };
+
+      const [products, totalProducts] = await Promise.all([
+        this.productModel
+          .find(filter, { score: { $meta: 'textScore' } })
+          .sort({ score: { $meta: 'textScore' } })
+          .limit(limit)
+          .skip(skip)
+          .exec(),
+        this.productModel.countDocuments(filter),
+      ]);
+
+      if (products.length === 0)
+        throw new NotFoundException('Không tìm thấy sản phẩm');
+
+      return { success: true, data: { totalProducts, products } };
     } catch (error) {
-      return { success: false, error: error };
+      return { success: false, error };
     }
   }
 
   // Lấy sản phẩm theo danh mục
   async getProductsByCategory(
-    page: number = 0,
+    page: number,
     categoryId: string,
-    limit: number
+    limit: number,
+    state?: number
   ): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
       const skip = page * limit;
-      const products = await this.productModel
-        .find({ danhMuc_SP: categoryId, daXoa_SP: false })
-        .skip(skip)
-        .limit(limit)
-        .exec();
-      if (products) throw new NotFoundException('Không tim thấy sản phẩm');
-      const totalProducts = await this.productModel.countDocuments({
-        danhMuc_SP: categoryId,
-        daXoa_SP: false,
-      });
+      const filter: any = { nganhHang_SP: categoryId };
+
+      if (state === 1) {
+        filter.daAn_SP = false;
+      } else if (state === 2) {
+        filter.daAn_SP = true;
+      }
+
+      const [products, totalProducts] = await Promise.all([
+        this.productModel.find(filter).skip(skip).limit(limit).exec(),
+        this.productModel.countDocuments(filter),
+      ]);
+
+      if (products.length === 0)
+        throw new NotFoundException('Không tìm thấy sản phẩm');
+
       return { success: true, data: { totalProducts, products } };
     } catch (error) {
-      return { success: false, error: error };
+      return { success: false, error };
     }
   }
 
@@ -488,27 +369,12 @@ export class ProductService {
           `Không tìm thấy thông tin bán hàng với _id = ${idTTBanHang}`
         );
 
-      // Tìm tùy chọn phân loại 1 tương ứng
-      const phanLoai1 = product.phanLoai_SP?.find((pl) =>
-        pl.tuyChon_PL.some((tc) => tc.ten_TC === ttBanHang.tuyChonPhanLoai1_BH)
-      );
-
-      // Lấy thông tin tùy chọn phân loại 1 (nếu có)
-      let anh = phanLoai1
-        ? phanLoai1.tuyChon_PL.find(
-            (tc) => tc.ten_TC === ttBanHang.tuyChonPhanLoai1_BH
-          )?.anh_TC
-        : null;
-
-      if (!anh) {
-        anh = product.anhBia_SP;
-      }
       return {
         success: true,
         data: {
           _id: product._id,
           ten_SP: product.ten_SP,
-          anh_SP: anh,
+          anh_SP: product.anhBia_SP,
           ttBanHang_SP: ttBanHang,
         },
       };
@@ -516,6 +382,7 @@ export class ProductService {
       return { success: false, error: error };
     }
   }
+
   async getMultipleProductSalesInf(
     idTTBanHangList: string[]
   ): Promise<{ success: boolean; data?: any; error?: any }> {
@@ -524,7 +391,7 @@ export class ProductService {
         'ttBanHang_SP._id': { $in: idTTBanHangList },
       });
 
-      if (!products.length) {
+      if (!products || products.length === 0) {
         throw new NotFoundException('Không tìm thấy sản phẩm');
       }
 
@@ -550,22 +417,10 @@ export class ProductService {
             );
           }
 
-          const phanLoai1 = product.phanLoai_SP?.find((pl) =>
-            pl.tuyChon_PL.some(
-              (tc) => tc.ten_TC === ttBanHang.tuyChonPhanLoai1_BH
-            )
-          );
-
-          const anh = phanLoai1
-            ? phanLoai1.tuyChon_PL.find(
-                (tc) => tc.ten_TC === ttBanHang.tuyChonPhanLoai1_BH
-              )?.anh_TC
-            : product.anhBia_SP;
-
           return {
             _id: product._id,
             ten_SP: product.ten_SP,
-            anh_SP: anh,
+            anh_SP: product.anhBia_SP,
             ttBanHang_SP: ttBanHang,
           };
         } catch (error) {
@@ -656,13 +511,22 @@ export class ProductService {
           ? banHang.khoHang_BH + sp.soLuong_CTHD
           : banHang.khoHang_BH - sp.soLuong_CTHD;
 
+        const doanhSoMoi = hoanKho
+          ? banHang.doanhSo_BH + 1
+          : banHang.doanhSo_BH - 1;
+
         danhSachCapNhat.push({
           updateOne: {
             filter: {
               _id: sp.idSanPham_CTHD,
               'ttBanHang_SP._id': sp.idTTBanHang_CTHD,
             },
-            update: { $set: { 'ttBanHang_SP.$.khoHang_BH': soLuongMoi } },
+            update: {
+              $set: {
+                'ttBanHang_SP.$.khoHang_BH': soLuongMoi,
+                'ttBanHang_SP.$.doanhSo_BH': doanhSoMoi,
+              },
+            },
           },
         });
 

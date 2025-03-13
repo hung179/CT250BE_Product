@@ -24,8 +24,8 @@ export class ReviewService {
 
   async getReviewsByProduct(
     productId: string,
-    page: number,
-    limit: number
+    page: number = 0,
+    limit: number = 12
   ): Promise<{ success: boolean; data?: DANH_GIA[]; error?: any }> {
     try {
       const reviews = await this.reviewModel
