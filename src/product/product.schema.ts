@@ -51,8 +51,8 @@ export class SAN_PHAM {
   @Prop({
     type: [
       {
-        tuyChonPhanLoai1_BH: { type: String },
-        tuyChonPhanLoai2_BH: { type: String },
+        tuyChonPhanLoai1_BH: { type: Number },
+        tuyChonPhanLoai2_BH: { type: Number },
         trongLuong_BH: { type: Number, min: 1, max: 999999 },
         giaBan_BH: { type: Number, required: true, min: 1000, max: 120000000 },
         khoHang_BH: { type: Number, required: true, min: 1, max: 999999 },
@@ -61,8 +61,8 @@ export class SAN_PHAM {
     ],
   })
   ttBanHang_SP!: {
-    tuyChonPhanLoai1_BH: string;
-    tuyChonPhanLoai2_BH: string;
+    tuyChonPhanLoai1_BH: number;
+    tuyChonPhanLoai2_BH: number;
     trongLuong_BH: number;
     giaBan_BH: number;
     khoHang_BH: number;

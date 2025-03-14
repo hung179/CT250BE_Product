@@ -172,10 +172,12 @@ export class ProductController {
   async giamKhoHang(
     @Payload()
     ttSanPham: {
-      idSanPham_CTHD: string;
-      idTTBanHang_CTHD: string;
-      soLuong_CTHD: number;
-      giaMua_CTHD: number;
+      idSanPham_CTDH: string;
+      idTTBanHang_CTDH: string;
+      tenSanPham_CTDH: string;
+      ttBanHang_CTDH: string;
+      soLuong_CTDH: number;
+      giaMua_CTDH: number;
     }[]
   ) {
     return this.productService.capNhatKhoHang(ttSanPham);
@@ -185,10 +187,12 @@ export class ProductController {
   hoanKhoHang(
     @Payload()
     ttSanPham: {
-      idSanPham_CTHD: string;
-      idTTBanHang_CTHD: string;
-      soLuong_CTHD: number;
-      giaMua_CTHD: number;
+      idSanPham_CTDH: string;
+      idTTBanHang_CTDH: string;
+      tenSanPham_CTDH: string;
+      ttBanHang_CTDH: string;
+      soLuong_CTDH: number;
+      giaMua_CTDH: number;
     }[]
   ) {
     return this.productService.capNhatKhoHang(ttSanPham, true);

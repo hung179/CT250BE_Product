@@ -376,6 +376,7 @@ export class ProductService {
           ten_SP: product.ten_SP,
           anh_SP: product.anhBia_SP,
           ttBanHang_SP: ttBanHang,
+          phanLoai_SP: product.phanLoai_SP,
         },
       };
     } catch (error) {
@@ -422,6 +423,7 @@ export class ProductService {
             ten_SP: product.ten_SP,
             anh_SP: product.anhBia_SP,
             ttBanHang_SP: ttBanHang,
+            phanLoai_SP: product.phanLoai_SP,
           };
         } catch (error) {
           return { idTTBanHang, error: error };
@@ -436,32 +438,37 @@ export class ProductService {
 
   async capNhatKhoHang(
     ttSanPham: {
-      idSanPham_CTHD: string;
-      idTTBanHang_CTHD: string;
-      soLuong_CTHD: number;
-      giaMua_CTHD: number;
+      idSanPham_CTDH: string;
+      idTTBanHang_CTDH: string;
+      tenSanPham_CTDH: string;
+      ttBanHang_CTDH: string;
+      soLuong_CTDH: number;
+      giaMua_CTDH: number;
     }[],
     hoanKho: boolean = false
   ): Promise<{
     success: boolean;
     data?: {
-      idSanPham_CTHD: string;
-      idTTBanHang_CTHD: string;
-      soLuong_CTHD: number;
-      giaMua_CTHD: number;
+      idSanPham_CTDH: string;
+      idTTBanHang_CTDH: string;
+      tenSanPham_CTDH: string;
+      ttBanHang_CTDH: string;
+      soLuong_CTDH: number;
+      giaMua_CTDH: number;
     }[];
-    error?: string;
+    error?: any;
   }> {
     const session = await this.productModel.startSession();
     session.startTransaction();
 
     try {
       // 🔍 Lấy danh sách ID sản phẩm để truy vấn 1 lần
-      const danhSachIdSanPham = ttSanPham.map((sp) => sp.idSanPham_CTHD);
+      const danhSachIdSanPham = [
+        ...new Set(ttSanPham.map((sp) => sp.idSanPham_CTDH)),
+      ];
       const sanPhams = await this.productModel
         .find({ _id: { $in: danhSachIdSanPham } })
         .session(session);
-
       if (sanPhams.length !== danhSachIdSanPham.length) {
         await session.abortTransaction();
         return { success: false, error: `Có sản phẩm không tồn tại.` };
@@ -469,57 +476,59 @@ export class ProductService {
 
       const danhSachCapNhat: any[] = [];
       const ketQuaTraVe: {
-        idSanPham_CTHD: string;
-        idTTBanHang_CTHD: string;
-        soLuong_CTHD: number;
-        giaMua_CTHD: number;
+        idSanPham_CTDH: string;
+        idTTBanHang_CTDH: string;
+        tenSanPham_CTDH: string;
+        ttBanHang_CTDH: string;
+        soLuong_CTDH: number;
+        giaMua_CTDH: number;
       }[] = [];
 
       for (const sp of ttSanPham) {
         const sanPham = sanPhams.find(
-          (s) => (s._id as any).toString() === sp.idSanPham_CTHD
+          (s) => (s._id as any).toString() === sp.idSanPham_CTDH
         );
         if (!sanPham) {
           await session.abortTransaction();
           return {
             success: false,
-            error: `Sản phẩm ${sp.idSanPham_CTHD} không tồn tại.`,
+            error: `Sản phẩm ${sp.idSanPham_CTDH} không tồn tại.`,
           };
         }
 
         const banHang = sanPham.ttBanHang_SP?.find(
-          (item: any) => item._id?.toString() === sp.idTTBanHang_CTHD
+          (item: any) => item._id?.toString() === sp.idTTBanHang_CTDH
         );
 
         if (!banHang) {
           await session.abortTransaction();
           return {
             success: false,
-            error: `Không tìm thấy thông tin bán hàng ${sp.idTTBanHang_CTHD} trong sản phẩm ${sp.idSanPham_CTHD}.`,
+            error: `Không tìm thấy thông tin bán hàng ${sp.idTTBanHang_CTDH} trong sản phẩm ${sp.idSanPham_CTDH}.`,
           };
         }
 
-        if (!hoanKho && banHang.khoHang_BH < sp.soLuong_CTHD) {
+        if (!hoanKho && banHang.khoHang_BH < sp.soLuong_CTDH) {
           await session.abortTransaction();
           return {
             success: false,
-            error: `Sản phẩm ${sp.idSanPham_CTHD} - Kho hàng ${sp.idTTBanHang_CTHD} không đủ hàng.`,
+            error: `Sản phẩm ${sp.idSanPham_CTDH} - Kho hàng ${sp.idTTBanHang_CTDH} không đủ hàng.`,
           };
         }
 
         const soLuongMoi = hoanKho
-          ? banHang.khoHang_BH + sp.soLuong_CTHD
-          : banHang.khoHang_BH - sp.soLuong_CTHD;
+          ? banHang.khoHang_BH + sp.soLuong_CTDH
+          : banHang.khoHang_BH - sp.soLuong_CTDH;
 
         const doanhSoMoi = hoanKho
-          ? banHang.doanhSo_BH + 1
-          : banHang.doanhSo_BH - 1;
+          ? banHang.doanhSo_BH - 1
+          : banHang.doanhSo_BH + 1;
 
         danhSachCapNhat.push({
           updateOne: {
             filter: {
-              _id: sp.idSanPham_CTHD,
-              'ttBanHang_SP._id': sp.idTTBanHang_CTHD,
+              _id: sp.idSanPham_CTDH,
+              'ttBanHang_SP._id': sp.idTTBanHang_CTDH,
             },
             update: {
               $set: {
@@ -530,11 +539,30 @@ export class ProductService {
           },
         });
 
+        const tenTuyChon1 =
+          sanPham.phanLoai_SP?.[0]?.tuyChon_PL?.[banHang.tuyChonPhanLoai1_BH]
+            ?.ten_TC || null;
+        const tenTuyChon2 =
+          sanPham.phanLoai_SP?.[1]?.tuyChon_PL?.[banHang.tuyChonPhanLoai2_BH]
+            ?.ten_TC || null;
+
+        let ttBanHang = '';
+
+        if (tenTuyChon1 && tenTuyChon2) {
+          ttBanHang = `${tenTuyChon1} - ${tenTuyChon2}`;
+        } else if (tenTuyChon1) {
+          ttBanHang = tenTuyChon1;
+        } else if (tenTuyChon2) {
+          ttBanHang = tenTuyChon2;
+        }
+
         ketQuaTraVe.push({
-          idSanPham_CTHD: sp.idSanPham_CTHD,
-          idTTBanHang_CTHD: sp.idTTBanHang_CTHD,
-          soLuong_CTHD: sp.soLuong_CTHD,
-          giaMua_CTHD: banHang.giaBan_BH,
+          idSanPham_CTDH: sp.idSanPham_CTDH,
+          idTTBanHang_CTDH: sp.idTTBanHang_CTDH,
+          tenSanPham_CTDH: sanPham.ten_SP,
+          ttBanHang_CTDH: ttBanHang,
+          soLuong_CTDH: sp.soLuong_CTDH,
+          giaMua_CTDH: banHang.giaBan_BH,
         });
       }
 
@@ -544,6 +572,7 @@ export class ProductService {
 
       await session.commitTransaction();
       session.endSession();
+
       if (hoanKho) {
         return { success: true };
       } else {
@@ -552,7 +581,8 @@ export class ProductService {
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
-      return { success: false, error: (error as Error).message.toString() };
+
+      return { success: false, error: error };
     }
   }
 }

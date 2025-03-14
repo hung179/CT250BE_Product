@@ -16,7 +16,7 @@ export class RedisService {
   // 🔥 Gửi request và chờ phản hồi (Request-Response)
   async requestResponse<T>(
     channel: string,
-    message: any
+    message?: any
   ): Promise<{ success: boolean; data?: T; error?: any }> {
     return lastValueFrom(this.redisClient.send(channel, message));
   }

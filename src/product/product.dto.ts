@@ -46,11 +46,11 @@ class PhanLoaiSPDto {
 
 class TTBanHangSPDto {
   @IsOptional()
-  @IsString()
+  @IsNumber()
   tuyChonPhanLoai1_BH?: string;
 
   @IsOptional()
-  @IsString()
+  @IsNumber()
   tuyChonPhanLoai2_BH?: string;
 
   @Min(1000)
