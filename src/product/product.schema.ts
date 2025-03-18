@@ -16,8 +16,19 @@ export class SAN_PHAM {
   @Prop({ type: String, required: true, index: 'text', maxlength: 120 })
   ten_SP!: string;
 
-  @Prop({ type: String, required: true })
-  nganhHang_SP!: string;
+  @Prop({
+    type: {
+      cap1_NH: { type: String, required: true },
+      cap2_NH: { type: String, required: false, default: '' },
+      cap3_NH: { type: String, required: false, default: '' },
+    },
+    required: true,
+  })
+  nganhHang_SP!: {
+    cap1_NH: string;
+    cap2_NH?: string;
+    cap3_NH?: string;
+  };
 
   @Prop({ type: String, required: true, minlength: 100, maxlength: 3000 })
   moTa_SP!: string;
@@ -37,11 +48,10 @@ export class SAN_PHAM {
   @Prop({
     type: [
       {
-        thuocTinh_CTSP: { type: String, required: true },
-        giaTri_CTSP: { type: String, required: true },
+        thuocTinh_CTSP: { type: String },
+        giaTri_CTSP: { type: String },
       },
     ],
-    required: true,
   })
   ttChiTiet_SP!: {
     thuocTinh_CTSP: string;

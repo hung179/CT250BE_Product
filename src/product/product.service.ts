@@ -237,8 +237,9 @@ export class ProductService {
     try {
       const product = await this.productModel.findById(id);
       if (!product) throw new NotFoundException('Không tìm thấy sản phẩm');
-      const reviews = await this.reviewService.getReviewsByProduct(id);
-      return { success: true, data: { product, reviews } };
+      //const reviews = await this.reviewService.getReviewsByProduct(id);
+      //return { success: true, data: { product, reviews } };
+      return { success: true, data: product };
     } catch (error) {
       return { success: false, error: error };
     }
@@ -320,7 +321,13 @@ export class ProductService {
   ): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
       const skip = page * limit;
-      const filter: any = { nganhHang_SP: categoryId };
+      const filter: any = {
+        $or: [
+          { 'nganhHang_SP.cap1_NH': categoryId },
+          { 'nganhHang_SP.cap2_NH': categoryId },
+          { 'nganhHang_SP.cap3_NH': categoryId },
+        ],
+      };
 
       if (state === 1) {
         filter.daAn_SP = false;
@@ -478,6 +485,7 @@ export class ProductService {
       const ketQuaTraVe: {
         idSanPham_CTDH: string;
         idTTBanHang_CTDH: string;
+        maSanPham_CTDH: number;
         tenSanPham_CTDH: string;
         ttBanHang_CTDH: string;
         soLuong_CTDH: number;
@@ -559,6 +567,7 @@ export class ProductService {
         ketQuaTraVe.push({
           idSanPham_CTDH: sp.idSanPham_CTDH,
           idTTBanHang_CTDH: sp.idTTBanHang_CTDH,
+          maSanPham_CTDH: sanPham.ma_SP,
           tenSanPham_CTDH: sanPham.ten_SP,
           ttBanHang_CTDH: ttBanHang,
           soLuong_CTDH: sp.soLuong_CTDH,
@@ -567,7 +576,9 @@ export class ProductService {
       }
 
       if (danhSachCapNhat.length) {
-        await this.productModel.bulkWrite(danhSachCapNhat, { session });
+        await this.productModel.bulkWrite(danhSachCapNhat, {
+          session,
+        });
       }
 
       await session.commitTransaction();

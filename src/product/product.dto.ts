@@ -4,7 +4,6 @@ import {
   IsNumber,
   IsArray,
   IsOptional,
-  ValidateNested,
   IsNotEmpty,
   IsMongoId,
   IsBoolean,
@@ -18,9 +17,11 @@ import { PartialType } from '@nestjs/mapped-types';
 
 class TTChiTietSPDto {
   @IsMongoId()
+  @IsOptional()
   thuocTinh_CTSP!: string;
 
   @IsString()
+  @IsOptional()
   @Transform(({ value }) =>
     value !== null && value !== undefined ? String(value) : ''
   )
@@ -30,6 +31,19 @@ class TTChiTietSPDto {
 class TuyChonPLDto {
   @IsString()
   ten_TC!: string;
+}
+
+class NganhHangDto {
+  @IsString()
+  cap1_NH!: string;
+
+  @IsString()
+  @IsOptional()
+  cap2_NH!: string;
+
+  @IsString()
+  @IsOptional()
+  cap3_NH!: string;
 }
 
 class PhanLoaiSPDto {
@@ -73,9 +87,11 @@ export class CreateProductDto {
   @MinLength(10)
   ten_SP!: string;
 
-  @IsMongoId()
-  @IsNotEmpty()
-  nganhHang_SP!: string;
+  @Type(() => NganhHangDto)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value
+  )
+  nganhHang_SP!: NganhHangDto;
 
   @IsString()
   @IsNotEmpty()
@@ -84,6 +100,7 @@ export class CreateProductDto {
   moTa_SP!: string;
 
   @IsArray()
+  @IsOptional()
   @Transform(({ value }) =>
     typeof value === 'string' ? JSON.parse(value) : value
   )

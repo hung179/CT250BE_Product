@@ -19,5 +19,6 @@ import { RedisModule } from 'src/redis/redis.module';
   ],
   controllers: [ProductController],
   providers: [ProductService, CloudinaryService],
+  exports: [ProductService],
 })
 export class ProductModule {}

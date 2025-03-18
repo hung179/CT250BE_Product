@@ -5,6 +5,7 @@ import { ProductModule } from './product/product.module';
 import { ReviewModule } from './review/review.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { RedisModule } from './redis/redis.module';
+import { CartModule } from './cart/cart.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RedisModule } from './redis/redis.module';
       },
     }),
     ProductModule,
+    CartModule,
     CloudinaryModule,
     ReviewModule,
     RedisModule,
