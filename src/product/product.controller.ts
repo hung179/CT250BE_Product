@@ -136,9 +136,8 @@ export class ProductController {
       state: number;
     }
   ) {
-    console.log(payload.state);
     const { searchKey, code, category, limit, page, state } = payload;
-    if (searchKey) {
+    if (searchKey && searchKey != '') {
       return this.productService.getProductBySearchKey(
         searchKey,
         state,
@@ -147,7 +146,7 @@ export class ProductController {
       );
     } else if (code) {
       return this.productService.getProductByCode(code, state, page, limit);
-    } else if (category) {
+    } else if (category && category != '') {
       return this.productService.getProductsByCategory(
         page,
         category,

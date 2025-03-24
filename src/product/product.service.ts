@@ -281,7 +281,7 @@ export class ProductService {
     searchKey: string,
     page: number,
     limit: number,
-    state?: number
+    state: number = 1
   ): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
       const skip = page * limit;
@@ -317,7 +317,7 @@ export class ProductService {
     page: number,
     categoryId: string,
     limit: number,
-    state?: number
+    state: number = 1
   ): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
       const skip = page * limit;
