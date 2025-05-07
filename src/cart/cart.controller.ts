@@ -23,7 +23,6 @@ export class CartController {
       soLuong: number;
     }
   ) {
-    console.log(data);
     return this.cartService.addToCart(
       data.idKhachHang,
       data.idSanPham,
@@ -42,5 +41,5 @@ export class CartController {
     }
   ) {
     return this.cartService.removeFromCart(data.idKhachHang, data.products);
-  }
+  } 
 }

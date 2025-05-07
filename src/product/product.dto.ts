@@ -43,9 +43,9 @@ class NganhHangDto {
 
   @IsString()
   @IsOptional()
-  cap3_NH!: string;
+  cap3_NH!: string; 
 }
-
+ 
 class PhanLoaiSPDto {
   @IsString()
   ten_PL!: string;
@@ -132,7 +132,7 @@ export class UpdateProductDto extends PartialType(CreateProductDto) {
   )
   ttAnhXoa_SP?: string[];
 
-  @IsOptional()
+  @IsOptional()  
   @IsBoolean()
   daAn_SP?: boolean;
 }

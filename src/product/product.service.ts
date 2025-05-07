@@ -12,6 +12,7 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { DeletedProductCodeService } from '../deletedProductCode/deletedProductCode.service';
 import { ReviewService } from '../review/review.service';
 import { RedisService } from 'src/redis/redis.service';
+import { console } from 'inspector';
 
 @Injectable()
 export class ProductService {
@@ -78,7 +79,6 @@ export class ProductService {
       if (!product) {
         throw new NotFoundException('Sản phẩm không tồn tại');
       }
-
       await this.productModel.findOneAndUpdate(
         { _id: id },
         { $set: updateProductDto },
@@ -201,6 +201,7 @@ export class ProductService {
     state?: number
   ): Promise<{ success: boolean; data?: any; error?: any }> {
     try {
+
       const skip = page * limit;
       let filter: any = {};
 
@@ -215,7 +216,7 @@ export class ProductService {
           .find(filter)
           .skip(skip)
           .limit(limit)
-          .select('_id anhBia_SP ttBanHang_SP phanLoai_SP ten_SP ma_SP daAn_SP')
+          .select('_id anhBia_SP anh_SP ttBanHang_SP ttChiTiet_SP phanLoai_SP ten_SP ma_SP moTa_SP daAn_SP')
           .exec(),
         this.productModel.countDocuments(filter),
       ]);
@@ -223,7 +224,6 @@ export class ProductService {
       if (products.length === 0) {
         throw new NotFoundException('Không tìm thấy sản phẩm');
       }
-
       return { success: true, data: { totalProducts, products } };
     } catch (error) {
       return { success: false, error };
@@ -286,7 +286,6 @@ export class ProductService {
     try {
       const skip = page * limit;
       const filter: any = { $text: { $search: searchKey } };
-
       if (state === 1) {
         filter.daAn_SP = false;
       } else if (state === 2) {
@@ -308,7 +307,7 @@ export class ProductService {
 
       return { success: true, data: { totalProducts, products } };
     } catch (error) {
-      return { success: false, error };
+      return { success: false, error: error };
     }
   }
 
@@ -448,7 +447,6 @@ export class ProductService {
       idSanPham_CTDH: string;
       idTTBanHang_CTDH: string;
       tenSanPham_CTDH: string;
-      ttBanHang_CTDH: string;
       soLuong_CTDH: number;
       giaMua_CTDH: number;
     }[],
@@ -459,7 +457,7 @@ export class ProductService {
       idSanPham_CTDH: string;
       idTTBanHang_CTDH: string;
       tenSanPham_CTDH: string;
-      ttBanHang_CTDH: string;
+      ttBanHang_CTDH?: string;
       soLuong_CTDH: number;
       giaMua_CTDH: number;
     }[];

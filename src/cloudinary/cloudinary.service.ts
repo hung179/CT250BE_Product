@@ -21,7 +21,7 @@ export class CloudinaryService {
     anh_SP: Express.Multer.File
   ): Promise<{ anh_SP_uploaded: { public_id: string; url: string } }> {
     if (!anh_SP)
-      throw new BadRequestException('Không có ảnh bìa được cung cấp');
+      throw new BadRequestException('Không có ảnh bìa được cung cấp');   
 
     try {
       return new Promise<{ public_id: string; url: string }>(

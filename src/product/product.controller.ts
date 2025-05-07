@@ -116,7 +116,7 @@ export class ProductController {
   @MessagePattern('product_get-all')
   async getProducts(
     @Payload() payload: { page: number; limit: number; state: number }
-  ) {
+  ) {    
     return this.productService.getProducts(
       payload.page,
       payload.limit,
@@ -140,9 +140,9 @@ export class ProductController {
     if (searchKey && searchKey != '') {
       return this.productService.getProductBySearchKey(
         searchKey,
-        state,
         page,
-        limit
+        limit,
+        state
       );
     } else if (code) {
       return this.productService.getProductByCode(code, state, page, limit);
@@ -174,10 +174,9 @@ export class ProductController {
       idSanPham_CTDH: string;
       idTTBanHang_CTDH: string;
       tenSanPham_CTDH: string;
-      ttBanHang_CTDH: string;
-      soLuong_CTDH: number;
+      soLuong_CTDH: number; 
       giaMua_CTDH: number;
-    }[]
+    }[],
   ) {
     return this.productService.capNhatKhoHang(ttSanPham);
   }
@@ -185,15 +184,8 @@ export class ProductController {
   @MessagePattern('hoan_kho_san_pham')
   hoanKhoHang(
     @Payload()
-    ttSanPham: {
-      idSanPham_CTDH: string;
-      idTTBanHang_CTDH: string;
-      tenSanPham_CTDH: string;
-      ttBanHang_CTDH: string;
-      soLuong_CTDH: number;
-      giaMua_CTDH: number;
-    }[]
+    ttSanPham: any
   ) {
-    return this.productService.capNhatKhoHang(ttSanPham, true);
+    return this.productService.capNhatKhoHang(ttSanPham.ttSanPham, true);
   }
 }

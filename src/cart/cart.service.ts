@@ -110,7 +110,6 @@ export class CartService {
       const cart = await this.cartModel.findOne({
         idKhachHang_GH: idKhachHang,
       });
-
       if (!cart) {
         throw new NotFoundException(
           `Không tìm thấy giỏ hàng của khách hàng với ID = ${idKhachHang}`
@@ -128,7 +127,6 @@ export class CartService {
             )
         );
       }
-
       const updatedCart = await cart.save();
       return { success: true, data: updatedCart };
     } catch (error) {
